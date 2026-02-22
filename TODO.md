@@ -1,0 +1,6 @@
+- [x] Implement Explosion class in assets/JS/explosion.js
+  - [x] Load babah.json data
+  - [x] Preload PNG images (Sek_00001.png to Sek_00026.png)
+  - [x] Set up animation sequence based on slots
+  - [x] Add draw method to render current frame
+  - [x] Add animate method to cycle through frames

@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Animation System</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 20px;
+        background: #111;
+        font-family: Arial, sans-serif;
+        color: white;
+      }
+
+      .container {
+        /* max-width: 800px; */
+        /* margin: 0 auto; */
+        text-align: center;
+      }
+
+      h1 {
+        color: #ff6600;
+        margin-bottom: 10px;
+      }
+
+      /* Menu screens */
+      .screen {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        background: rgba(0, 0, 0, 0.9);
+        z-index: 1000;
+      }
+
+      #mainMenu {
+        display: flex; /* Show main menu by default */
+      }
+
+      #gameScreen {
+        display: none; /* Hide game screen initially */
+      }
+
+      #pauseMenu {
+        display: none; /* Hide pause menu initially */
+      }
+
+      canvas {
+        display: block;
+        margin: 20px auto;
+        border: 2px solid #333;
+        background: #ffffff;
+      }
+
+      .menu-title {
+        font-size: 48px;
+        color: #ff6600;
+        margin-bottom: 40px;
+        text-shadow: 0 0 10px rgba(255, 102, 0, 0.5);
+      }
+
+      .menu-button {
+        display: block;
+        width: 250px;
+        padding: 20px;
+        margin: 15px;
+        font-size: 22px;
+        background: #333;
+        color: white;
+        border: 2px solid #ff6600;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+
+      .menu-button:hover {
+        background: #ff6600;
+        transform: scale(1.05);
+      }
+
+      .controls {
+        margin: 20px 0;
+      }
+
+      button {
+        padding: 15px 30px;
+        margin: 10px;
+        font-size: 18px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      #explosionBtn {
+        background: #e74c3c;
+        color: white;
+      }
+
+      #explosionBtn:hover {
+        background: #c0392b;
+      }
+
+      #flameBtn {
+        background: #ff9900;
+        color: white;
+      }
+
+      #flameBtn:hover {
+        background: #e68a00;
+      }
+
+      #clearBtn {
+        background: #7f8c8d;
+        color: white;
+      }
+
+      #clearBtn:hover {
+        background: #95a5a6;
+      }
+
+      .menu-controls {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Main Menu Screen -->
+    <div id="mainMenu" class="screen">
+      <div class="menu-title">🎮 SOLDIER GAME</div>
+      <button class="menu-button" onclick="newGame()">START NEW GAME</button>
+      <button class="menu-button" onclick="continueGame()">CONTINUE</button>
+      <button class="menu-button" onclick="showOptions()">OPTIONS</button>
+      <button class="menu-button" onclick="quitGame()">QUIT</button>
+      <div style="margin-top: 40px; color: #888">
+        <p>Controls: WASD to move, CTRL to run</p>
+        <p>Press ESC to pause during game</p>
+      </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="gameScreen" class="screen">
+      <div class="container">
+        <canvas
+          id="gameCanvas"
+          style="width: 98vw; height: 95.6vh; display: block"
+        ></canvas>
+
+        <!-- <div class="controls">
+          <button id="explosionBtn" onclick="createExplosion()">
+            Create Explosion
+          </button>
+          <button onclick="createSoldier(100, 300)">Add Soldier (WSAD)</button>
+          <button onclick="toggleSoldierRun()">Toggle Run/Walk</button>
+          <button id="flameBtn" onclick="createFlame()">Create Flame</button>
+          <button id="clearBtn" onclick="AnimationManager.clearAll()">
+            Clear All
+          </button>
+          <button onclick="showPauseMenu()" style="background: #3498db">
+            Pause (ESC)
+          </button>
+        </div> -->
+      </div>
+    </div>
+
+    <!-- Pause Menu Screen -->
+    <div id="pauseMenu" class="screen">
+      <div class="menu-title">⏸️ PAUSED</div>
+      <button class="menu-button" onclick="resumeGame()">RESUME</button>
+      <button class="menu-button" onclick="showOptions()">OPTIONS</button>
+      <button class="menu-button" onclick="quitToMenu()">QUIT TO MENU</button>
+    </div>
+
+    <!-- First: Manager -->
+    <script src="assets/JS/animations.js"></script>
+    <!-- Second: Animation 1 -->
+    <script src="assets/JS/explosion.js"></script>
+    <!-- Second: Animation 2 -->
+    <script src="assets/JS/flame.js"></script>
+    <!-- Third: Animation 3 -->
+    <script src="assets/JS/soldier.js"></script>
+    <!-- Fourth: Menu System -->
+    <script src="assets/JS/menu.js"></script>
+  </body>
+</html>
