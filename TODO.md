@@ -1,6 +1,7 @@
-- [x] Implement Explosion class in assets/JS/explosion.js
-  - [x] Load babah.json data
-  - [x] Preload PNG images (Sek_00001.png to Sek_00026.png)
-  - [x] Set up animation sequence based on slots
-  - [x] Add draw method to render current frame
-  - [x] Add animate method to cycle through frames
+# Task: Fix enemy/player not moving
+
+- [x] Analyze task and read relevant files (state.js, player.js, script.js, input.js)
+- [x] Create detailed plan and get user confirmation
+- [x] Create this TODO.md
+- [x] Edit assets/ENEMY_JS/state.js to fix speed assignment in RunningLeft.enter() and RunningRight.enter()
+- [x] Test: Movement fixed - player.speed now set correctly in running states; verify in browser with arrow keys (console shows input)

@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Soldier Smoke Test</title>
+  <style>
+    html,body{height:100%;margin:0}
+    #gameCanvas{background:#333;display:block;margin:0 auto;}
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas" width="1024" height="600"></canvas>
+
+  <script type="module">
+    import { GameState } from './assets/JS/state.js';
+    import { createSoldier } from './assets/JS/soldier.js';
+    import './assets/JS/input.js';
+
+    // Simple harness to create a soldier and run update/draw loop.
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    function log(msg){ console.log('[smoke]', msg); }
+
+    // Create soldier roughly centered on load
+    window.addEventListener('load', () => {
+      const s = createSoldier(canvas.width/2, canvas.height - 40);
+      if (GameState && typeof GameState.setCurrentSoldier === 'function') {
+        GameState.setCurrentSoldier(s);
+      }
+      log('Soldier created. Use WASD to move, mouse to fire, R to reload, E to melee, Control to toggle run.');
+
+      // Basic loop
+      function loop() {
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        if (s.update) s.update();
+        if (s.draw) s.draw();
+        requestAnimationFrame(loop);
+      }
+
+      loop();
+    });
+  </script>
+</body>
+</html>

@@ -1,4 +1,6 @@
-class Soldier {
+import { GameState } from "./state.js";
+
+export class Soldier {
   constructor(x, y) {
     // Position on canvas - this represents the CENTER of the soldier at the feet
     this.x = x;
@@ -94,7 +96,7 @@ class Soldier {
 
     // Movement
     this.walkSpeed = 3;
-    this.runSpeed = 6;
+    this.runSpeed = 4.5;
     this.firingSpeed = 1;
     this.reloadSpeed = 1.5;
 
@@ -163,8 +165,7 @@ class Soldier {
     this.drawOffsetY = this.maxFrameHeight * this.scale;
 
     this.loadSpriteSheets();
-    this.setupControls();
-    this.setupMouseControls();
+    this.loadSpriteSheets();
   }
 
   // ========== REUSABLE FRAME GENERATOR ==========
@@ -339,8 +340,7 @@ class Soldier {
   }
   // ========== RELOADING LOGIC ==========
   startReloading() {
-    if (this.isReloading || this.isFiring || !this.isAlive || this.isMeleeing)
-      return;
+    if (this.isReloading || !this.isAlive || this.isMeleeing) return;
     if (this.bulletsInMagazine >= this.magazineSize) return; //already full
 
     console.log(" starting reload...");
@@ -356,7 +356,9 @@ class Soldier {
 
   stopReloading() {
     if (!this.isReloading) return;
-
+    this.currentSpeed = this.firingSpeed
+      ? this.walkSpeed
+      : this.currentFrame > 0; // Reset speed based on current action
     this.isReloading = false;
     this.bulletsInMagazine = this.magazineSize; // Fill magazine
     this.reloadFrameIndex = 0;
@@ -381,6 +383,8 @@ class Soldier {
           (this.reloadFrameIndex + 1) % this.reloadFrames.length;
       }
       this.lastReloadUpdate = now;
+      this.isRunning = false;
+      this.currentSpeed = this.reloadSpeed;
     }
   }
   // ========== MELEE LOGIC ==========
@@ -412,6 +416,7 @@ class Soldier {
       this.lastMeleeUpdate = now;
       if (this.meleeFrameIndex >= this.meleeAnimationLength) {
         this.stopMelee();
+        this.currentSpeed = this.walkSpeed;
       }
     }
   }
@@ -429,67 +434,62 @@ class Soldier {
     } else if (this.isMoving) {
     }
   }
-  // ========== CONTROLS ==========
-  setupControls() {
-    document.addEventListener("keydown", (event) => {
-      const key = event.key.toLowerCase();
-      if (["w", "a", "s", "d"].includes(key)) {
-        this.keys[key] = true;
-        this.checkMovement();
-      }
-      if (key === "control") {
-        toggleSoldierRun();
-        this.switchAnimationMode();
-      }
+  // ========== INPUT HANDLERS (moved out of automatic listeners) ==========
+  // These are called by a centralized input module so input can be
+  // controlled independently of the soldier instance lifecycle.
+  handleKeyDown(event) {
+    const key = event.key.toLowerCase();
+    if (["w", "a", "s", "d"].includes(key)) {
+      this.keys[key] = true;
+      this.checkMovement();
+    }
+    if (key === "control") {
+      if (typeof window.toggleSoldierRun === "function")
+        window.toggleSoldierRun();
+      this.switchAnimationMode();
+    }
 
-      if (key === "r") {
-        this.startReloading();
-      }
-      if (key === "e") {
-        this.startMelee();
-      }
-    });
-
-    document.addEventListener("keyup", (event) => {
-      const key = event.key.toLowerCase();
-      if (["w", "a", "s", "d"].includes(key)) {
-        this.keys[key] = false;
-        this.checkMovement();
-      }
-      if (key === "control") {
-        this.switchAnimationMode();
-      }
-    });
+    if (key === "r") {
+      this.startReloading();
+    }
+    if (key === "e") {
+      this.startMelee();
+    }
   }
 
-  setupMouseControls() {
-    // Mouse down (start firing)
-    this.canvas.addEventListener("mousedown", (event) => {
-      if (event.button === 0) {
-        this.isMouseDown = true;
-        this.startFiring();
+  handleKeyUp(event) {
+    const key = event.key.toLowerCase();
+    if (["w", "a", "s", "d"].includes(key)) {
+      this.keys[key] = false;
+      this.checkMovement();
+    }
+    if (key === "control") {
+      this.switchAnimationMode();
+    }
+  }
+
+  handleMouseDown(event) {
+    if (event.button === 0) {
+      this.isMouseDown = true;
+      this.startFiring();
+    }
+  }
+
+  handleMouseUp(event) {
+    if (event.button === 0) {
+      this.isMouseDown = false;
+      this.stopFiring();
+      if (this.bulletsInMagazine <= 0) {
+        this.startReloading();
       }
-    });
+    }
+  }
 
-    // Mouse up (stop firing)
-    this.canvas.addEventListener("mouseup", (event) => {
-      if (event.button === 0) {
-        this.isMouseDown = false;
-        this.stopFiring();
-        if (this.bulletsInMagazine <= 0) {
-          this.startReloading();
-        }
-      }
-    });
-
-    // Mouse move (track position only, no direction change)
-    this.canvas.addEventListener("mousemove", (event) => {
-      if (!this.isAlive) return;
-
-      const rect = this.canvas.getBoundingClientRect();
-      this.mouseX = event.clientX - rect.left;
-      this.mouseY = event.clientY - rect.top;
-    });
+  handleMouseMove(event) {
+    if (!this.isAlive) return;
+    const rect = this.canvas.getBoundingClientRect();
+    this.mouseX = event.clientX - rect.left;
+    this.mouseY = event.clientY - rect.top;
   }
 
   // ========== FIRING LOGIC ==========
@@ -694,6 +694,7 @@ class Soldier {
       this.activeFrames = this.runFrames;
       this.totalFrames = this.runFrames.length;
       this.currentFrame = 0;
+      this.currentspeed = this.runSpeed;
       this.speed = 50;
     } else {
       console.log("🚶 Switching to WALK mode");
@@ -807,7 +808,10 @@ class Soldier {
         frame =
           this.idleFrames[this.currentFrame % this.idleFrames.length] ||
           this.idleFrames[0];
+        this.isRunning = false; // Ensure we switch back to walk if idle frames exist
+        this.isMoving - false; // Not moving if idle frames exist
         spriteSheet = this.idleSpriteSheet;
+        this.speed = 100;
       } else {
         frame = this.activeFrames[this.currentFrame] || this.activeFrames[0];
         spriteSheet = this.walkSpriteSheet;
@@ -1111,27 +1115,24 @@ class Soldier {
 
 // ========== HELPER FUNCTIONS ==========
 function toggleSoldierRun() {
-  if (window.currentSoldier) {
-    window.currentSoldier.isRunning = !window.currentSoldier.isRunning;
-    window.currentSoldier.switchAnimationMode();
-    console.log("Run mode:", window.currentSoldier.isRunning);
+  const s = (GameState && GameState.currentSoldier) || window.currentSoldier;
+  if (s) {
+    s.isRunning = !s.isRunning;
+    s.switchAnimationMode();
+    console.log("Run mode:", s.isRunning);
   }
 }
 
 function toggleMouseFiring() {
-  if (window.currentSoldier) {
-    if (window.currentSoldier.isFiring) {
-      window.currentSoldier.stopFiring();
-    } else {
-      window.currentSoldier.startFiring();
-    }
-  }
+  const s = (GameState && GameState.currentSoldier) || window.currentSoldier;
+  if (!s) return;
+  if (s.isFiring) s.stopFiring();
+  else s.startFiring();
 }
 
 function clearBullets() {
-  if (window.currentSoldier) {
-    window.currentSoldier.bullets = [];
-  }
+  const s = (GameState && GameState.currentSoldier) || window.currentSoldier;
+  if (s) s.bullets = [];
 }
 
 function createSoldier(x, y) {
@@ -1139,6 +1140,11 @@ function createSoldier(x, y) {
 
   // Store for debugging
   window.currentSoldier = soldier;
+  if (GameState && typeof GameState.setCurrentSoldier === "function") {
+    GameState.setCurrentSoldier(soldier);
+  } else if (GameState) {
+    GameState.currentSoldier = soldier;
+  }
 
   if (typeof AnimationManager !== "undefined") {
     AnimationManager.add(soldier, "soldiers");
@@ -1148,26 +1154,31 @@ function createSoldier(x, y) {
 }
 
 function damageCurrentSoldier(amount = 10) {
-  if (window.currentSoldier) {
-    window.currentSoldier.takeDamage(amount);
-  } else {
-    console.log("No soldier to damage!");
-  }
+  const s = (GameState && GameState.currentSoldier) || window.currentSoldier;
+  if (s) s.takeDamage(amount);
+  else console.log("No soldier to damage!");
 }
 
 function forceReload() {
-  if (window.currentSoldier) {
-    window.currentSoldier.startReloading();
-  }
+  const s = (GameState && GameState.currentSoldier) || window.currentSoldier;
+  if (s) s.startReloading();
 }
 
 function setAmmo(count) {
-  if (window.currentSoldiersoldier) {
-    window.currentSoldier.bulletsInMagazine = count;
-  }
+  const s = (GameState && GameState.currentSoldier) || window.currentSoldier;
+  if (s) s.bulletsInMagazine = count;
 }
+// Export helpers for module consumers
+export {
+  createSoldier,
+  damageCurrentSoldier,
+  toggleMouseFiring,
+  clearBullets,
+  forceReload,
+  setAmmo,
+};
 
-// ========== EXPORT TO WINDOW ==========
+// Backwards compatibility: attach to `window`
 window.Soldier = Soldier;
 window.createSoldier = createSoldier;
 window.damageCurrentSoldier = damageCurrentSoldier;
@@ -1175,3 +1186,7 @@ window.toggleMouseFiring = toggleMouseFiring;
 window.clearBullets = clearBullets;
 window.forceReload = forceReload;
 window.setAmmo = setAmmo;
+
+// Expose toggleSoldierRun for existing UI and handlers
+window.toggleSoldierRun = toggleSoldierRun;
+export { toggleSoldierRun };

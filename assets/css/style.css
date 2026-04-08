@@ -1,0 +1,22 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: "helvetica", cursive;
+}
+body {
+  overflow: hidden;
+}
+canvas {
+  top: 0;
+  left: 0;
+}
+img {
+  display: none;
+}
+#laoding {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  text-align: center;
+  font-size: 80px;
+}
