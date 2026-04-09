@@ -1,12 +1,8 @@
 export const states = {
-  STANDING_LEFT: 0,
-  STANDING_RIGHT: 1,
-  RELOADING_LEFT: 2,
-  RELOADING_RIGHT: 3,
-  RUNNING_LEFT: 4,
-  RUNNING_RIGHT: 5,
-  JUMPING_LEFT: 6,
-  JUMPING_RIGHT: 7,
+  STANDING: 0,
+  RELOADING: 1,
+  RUNNING: 2,
+  JUMPING: 3,
 };
 
 class State {
@@ -14,156 +10,149 @@ class State {
     this.state = state;
   }
 }
-export class StandingLeft extends State {
+
+export class Standing extends State {
   constructor(player) {
-    super("STANDING LEFT");
+    super("STANDING");
     this.player = player;
   }
+
   enter() {
+    this.player.frameX = 0;
     this.player.frameY = 0;
-    this.player.flip = true;
     this.player.speed = 0;
-    this.player.maxFrames = 6
+    this.player.maxFrames = 6;
   }
+
   handleInput(input) {
-    if (input === "PRESS right") this.player.setState(states.RUNNING_RIGHT);
-    else if (input === "PRESS left") this.player.setState(states.RUNNING_LEFT);
-    else if (input === "PRESS down") this.player.setState(states.RELOADING_LEFT);
-    else if (input === "PRESS up") this.player.setState(states.JUMPING_LEFT);
+    if (input === "PRESS right") {
+      this.player.flip = false;
+      this.player.setState(states.RUNNING);
+    } else if (input === "PRESS left") {
+      this.player.flip = true;
+      this.player.setState(states.RUNNING);
+    } else if (input === "PRESS down") {
+      this.player.setState(states.RELOADING);
+    } else if (input === "PRESS up" && this.player.onGround()) {
+      this.player.previousState = states.STANDING; // Store current state
+      this.player.setState(states.JUMPING);
+    }
   }
 }
 
-export class StandingRight extends State {
-  constructor(player) {
-    super("STANDING RIGHT");
-    this.player = player;
-  }
-  enter() {
-    this.player.flip = false;
-    this.player.frameY = 0;
-    this.player.speed = 0;
-    this.player.maxFrames = 6
-  }
-  handleInput(input) {
-    if (input === "PRESS left") this.player.setState(states.RUNNING_LEFT);
-    else if (input === "PRESS right")
-      this.player.setState(states.RUNNING_RIGHT);
-    else if (input === "PRESS down") this.player.setState(states.RELOADING_RIGHT);
-    else if (input === "PRESS up") this.player.setState(states.JUMPING_RIGHT);
-  }
-}
-
-export class ReloadingLeft extends State {
+export class Reloading extends State {
   constructor(player) {
     super("RELOADING");
     this.player = player;
   }
+
   enter() {
-    this.player.flip = true;
+    this.player.frameX = 0;
     this.player.frameY = 3;
     this.player.speed = 0;
     this.player.maxFrames = 12;
   }
+
   handleInput(input) {
-    if (input === "PRESS right")
-      //set state to RELOADINGLeft
-      this.player.setState(states.RELOADING_RIGHT);
-    else if (input === "PRESS up") this.player.setState(states.STANDING_LEFT);
-    else if (input === "RELEASE down")
-      this.player.setState(states.STANDING_LEFT);
+    if (input === "PRESS up" && this.player.onGround()) {
+      this.player.previousState = states.RELOADING; // Store current state
+      this.player.setState(states.JUMPING);
+    }
+    if (this.player.frameX >= this.player.maxFrames) {
+      if (this.player.previousState !== undefined) {
+        this.player.setState(this.player.previousState);
+      } else if (input === "RELEASE right" && !this.player.flip) {
+        this.player.setState(states.STANDING);
+      } else if (input === "RELEASE left" && this.player.flip) {
+        this.player.setState(states.STANDING);
+      } else if (input === "RELEASE down") {
+        this.player.setState(states.STANDING);
+      } else {
+        // Fallback to standing if no previous state was stored
+        this.player.setState(states.STANDING);
+      }
+    }
   }
 }
-export class ReloadingRight extends State {
+
+export class Running extends State {
   constructor(player) {
-    super("RELOADING RIGHT");
+    super("RUNNING");
     this.player = player;
   }
+
   enter() {
-    this.player.flip = false;
-    this.player.frameY = 3;
-    this.player.maxFrames = 12;
-    this.player.speed = 0;
-  }
-  handleInput(input) {
-    if (input === "PRESS left")
-      //set state to RELOADINGLeft
-      this.player.setState(states.RELOADING_LEFT);
-    else if (input === "PRESS up") this.player.setState(states.STANDING_RIGHT);
-    else if (input === "RELEASE down")
-      this.player.setState(states.STANDING_RIGHT);
-  }
-}
-//////////////////////////
-export class RunningLeft extends State {
-  constructor(player) {
-    super("RUNNING LEFT");
-    this.player = player;
-  }
-  enter() {
+    this.player.frameX = 0;
     this.player.frameY = 2;
-    this.player.flip = true;
-    this.player.speed = -this.player.maxSpeed;
     this.player.maxFrames = 7;
+    this.player.speed = this.player.flip
+      ? -this.player.maxSpeed
+      : this.player.maxSpeed;
   }
+
   handleInput(input) {
-    if (input === "PRESS right") this.player.setState(states.RUNNING_RIGHT);
-    else if (input === "RELEASE left")
-      this.player.setState(states.STANDING_LEFT);
-    else if (input === "PRESS down") this.player.setState(states.RELOADING_LEFT);
-    else if (input === "PRESS up") this.player.setState(states.JUMPING_LEFT);
+    if (input === "PRESS right") {
+      this.player.flip = false;
+      this.player.speed = this.player.maxSpeed;
+    } else if (input === "PRESS left") {
+      this.player.flip = true;
+      this.player.speed = -this.player.maxSpeed;
+    } else if (input === "PRESS down") {
+      this.player.setState(states.RELOADING);
+    } else if (input === "PRESS up" && this.player.onGround()) {
+      this.player.previousState = states.RUNNING; // Store current state
+      this.player.setState(states.JUMPING);
+    } else if (input === "RELEASE right" && !this.player.flip) {
+      this.player.setState(states.STANDING);
+    } else if (input === "RELEASE left" && this.player.flip) {
+      this.player.setState(states.STANDING);
+    }
   }
 }
 
-export class RunningRight extends State {
+export class Jumping extends State {
   constructor(player) {
-    super("RUNNING RIGHT");
+    super("JUMPING");
     this.player = player;
   }
-  enter() {
-    this.player.flip = false;
-    this.player.frameY = 2;
-    this.player.speed = this.player.maxSpeed;
-    this.player.maxFrames = 7;
-  }
-  handleInput(input) {
-    if (input === "PRESS left") this.player.setState(states.RUNNING_LEFT);
-    else if (input === "RELEASE right")
-      this.player.setState(states.STANDING_RIGHT);
-    else if (input === "PRESS down") this.player.setState(states.RELOADING_RIGHT);
-    else if (input === "PRESS up") this.player.setState(states.JUMPING_RIGHT);
-  }
-}
 
-//////////////////////////
-export class JumpingLeft extends State {
-  constructor(player) {
-    super("JUMPING LEFT");
-    this.player = player;
-  }
   enter() {
-    this.player.flip = true;
-    if (this.player.onGround()) this.player.vy -= 10;
-    this.player.speed = -this.player.maxSpeed * 0.5;
+    this.player.frameX = 0;
+    if (this.player.onGround()) {
+      this.player.vy = -10;
+    }
+    // Keep the same speed as before jumping
+    // Don't change the speed, just preserve it
   }
-  handleInput(input) {
-    if (input === "PRESS right") this.player.setState(states.JUMPING_RIGHT);
-    else if (this.player.onGround()) this.player.setState(states.STANDING_LEFT);
-  }
-}
 
-export class JumpingRight extends State {
-  constructor(player) {
-    super("JUMPING RIGHT");
-    this.player = player;
-  }
-  enter() {
-    this.player.flip = false;
-    if (this.player.onGround()) this.player.vy -= 10;
-    this.player.speed = this.player.maxSpeed * 0.5;
-  }
   handleInput(input) {
-    if (input === "PRESS left") this.player.setState(states.JUMPING_LEFT);
-    else if (this.player.onGround())
-      this.player.setState(states.STANDING_RIGHT);
+    // Allow air control
+    if (input === "PRESS right") {
+      this.player.flip = false;
+      this.player.setState(states.RUNNING);
+    } else if (input === "PRESS left") { 
+      this.player.flip = true;
+      this.player.setState(states.RUNNING);
+    }
+    // When landing, go back to previous state (running, standing, or reloading)
+    if (this.player.onGround()) {
+      // Return to the state we were in before jumping
+      if (this.player.previousState !== undefined) {
+        this.player.setState(this.player.previousState);
+      } else if (input === "RELEASE right" && !this.player.flip) {
+        this.player.setState(states.STANDING);
+      } else if (input === "RELEASE left" && this.player.flip) {
+        this.player.setState(states.STANDING);
+      } else if (input === "RELEASE down") {
+        this.player.setState(states.STANDING);
+      } 
+      else if (input === "RELEASE up") {
+        this.player.setState(states.STANDING);
+      }
+      else {
+        // Fallback to standing if no previous state was stored
+        this.player.setState(states.STANDING);
+      }
+    }
   }
 }
