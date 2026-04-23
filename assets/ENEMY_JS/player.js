@@ -1,4 +1,12 @@
-import { Standing, Reloading, Running, Jumping } from "./state.js";
+import {
+  Standing,
+  Reloading,
+  Running,
+  Jumping,
+  Walking,
+  ThrowingGrenade,
+  states,
+} from "./state.js";
 
 export default class Player {
   constructor(gameWidth, gameHeight) {
@@ -9,8 +17,11 @@ export default class Player {
       new Reloading(this),
       new Running(this),
       new Jumping(this),
+      new Walking(this),
+      new ThrowingGrenade(this),
     ];
     this.currentState = this.states[0];
+    // this.previousState = states.STANDING;
     this.image = document.getElementById("soldier");
     this.width = 128;
     this.height = 128;
@@ -24,16 +35,29 @@ export default class Player {
     this.speed = 0;
     this.maxSpeed = 10;
     this.flip = false;
-    this.fps = 30;
+    this.fps = 20;
     this.frameTimer = 0;
-    this.previousState = this.states.STANDING; // Store previous state
-    this.frameInterval = 1000 / this.fps;
+    this.previousState = states.STANDING; // Store previous state
+    this.frameInterval = (1000 / this.fps) * 4;
+    this.animationComplete = false;
   }
 
   draw(context, deltaTime) {
     if (this.frameTimer > this.frameInterval) {
-      if (this.frameX < this.maxFrames) this.frameX++;
-      else this.frameX = 0;
+      if (this.frameX < this.maxFrames) {
+        this.frameX++;
+      } else {
+        // Only reset to 0 if NOT in throwing grenade state
+        if (
+          this.currentState.state !== "THROWING GRANADE" &&
+          this.currentState.state !== "RELOADING"
+        ) {
+          this.frameX = 0;
+        } else {
+          // Stay on last frame, mark as complete
+          this.animationComplete = true;
+        }
+      }
       this.frameTimer = 0;
     } else {
       this.frameTimer += deltaTime;
