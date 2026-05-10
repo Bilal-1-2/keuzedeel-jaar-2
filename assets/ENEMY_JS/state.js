@@ -28,10 +28,10 @@ export class Standing extends State {
   handleInput(input) {
     if (input.lastKey === "PRESS right") {
       this.player.flip = false;
-      this.player.setState(states.RUNNING);
+      this.player.setState(states.WALKING);
     } else if (input.lastKey === "PRESS left") {
       this.player.flip = true;
-      this.player.setState(states.RUNNING);
+      this.player.setState(states.WALKING);
     } else if (input.lastKey === "PRESS reload") {
       this.player.setState(states.RELOADING);
     } else if (input.lastKey === "PRESS G") {
@@ -43,7 +43,7 @@ export class Standing extends State {
     }
     // Held state transition
     if (input.keys.right || input.keys.left) {
-      this.player.setState(states.RUNNING);
+      this.player.setState(states.WALKING);
     } else if (input.keys.down) {
       this.player.setState(states.RELOADING);
     }
@@ -74,14 +74,14 @@ export class Reloading extends State {
         this.player.flip = true;
         this.player.speed = -2;
       }
-      else if (input.lastKey === "PRESS up") {
+    if (input.lastKey === "PRESS up") {
       this.player.setState(states.STANDING);
     } else if (
       input.lastKey === "RELEASE reload" &&
       this.player.frameX >= this.player.maxFrames
     ) {
       this.player.frameX = 1;
-      this.player.setState(states.STANDING);
+      this.player.setState(this.player.previousState || states.STANDING);
     } else if (input.lastKey === "PRESS up" && this.player.onGround()) {
       this.player.previousState = states.RELOADING;
       this.player.setState(states.JUMPING);
@@ -219,7 +219,6 @@ export class Walking extends State {
       this.player.setState(states.RELOADING);
       return;
     } else {
-      // No movement keys pressed -> stop
       this.player.setState(states.STANDING);
       return;
     }
@@ -232,6 +231,7 @@ export class ThrowingGrenade extends State {
   }
 
   enter() {
+    this.player.hasThrown = false;
     this.player.frameY = 4;
     this.player.maxFrames = 8;
     this.player.speed = 2;
@@ -248,12 +248,25 @@ export class ThrowingGrenade extends State {
         this.player.flip = true;
         this.player.speed = -2;
       }
+
     if (
       input.lastKey === "RELEASE G" &&
       this.player.frameX >= this.player.maxFrames
     ) {
       this.player.frameX = 1;
       this.player.setState(this.player.previousState || states.STANDING);
+    }
+    if (
+      this.player.spawnGrenade &&
+      !this.player.hasThrown &&
+      this.player.frameX === 7
+    ) {
+      this.player.spawnGrenade(
+        this.player.x + (this.player.flip ? -20 : 50), // hand offset
+        this.player.y - 90, // hand-position
+        !this.player.flip, // direction opposite player face?
+      );
+      this.player.hasThrown = true;
     } else if (input.lastKey === "PRESS up" && this.player.onGround()) {
       this.player.previousState = states.RELOADING;
       this.player.setState(states.JUMPING);

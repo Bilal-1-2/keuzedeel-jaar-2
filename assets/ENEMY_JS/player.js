@@ -9,7 +9,7 @@ import {
 } from "./state.js";
 
 export default class Player {
-  constructor(gameWidth, gameHeight) {
+  constructor(gameWidth, gameHeight, spawnGrenade) {
     this.gameWidth = gameWidth;
     this.gameHeight = gameHeight;
     this.states = [
@@ -40,6 +40,8 @@ export default class Player {
     this.previousState = states.STANDING; // Store previous state
     this.frameInterval = (1000 / this.fps) * 4;
     this.animationComplete = false;
+    this.spawnGrenade = spawnGrenade || null; // Optional callback
+    this.hasThrown = false; // Prevent spam-spawn per throw
   }
 
   draw(context, deltaTime) {
