@@ -13,7 +13,7 @@ export default class Grenade {
     this.frameX = 0;
     this.frameY = 0;
     this.maxFrame = 6;
-    this.fps = 4;
+    this.fps = 5;
     this.frameTimer = 0;
     this.frameInterval = 1000 / this.fps;
     this.gravity = 0.4; // acceleration downward
@@ -57,7 +57,7 @@ export default class Grenade {
 
 
     // Optional: screen bounds (grenade can fly offscreen naturally)
-    // if (this.x < -this.width) this.exists = false;
+    // if (this.x >= this.gameWidth -this.width) this.exists = false;
     // if (this.x > this.gameWidth) this.exists = false;
   }
 

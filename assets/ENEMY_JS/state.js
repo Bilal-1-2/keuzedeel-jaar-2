@@ -249,13 +249,11 @@ export class ThrowingGrenade extends State {
         this.player.speed = -2;
       }
 
-    if (
-      input.lastKey === "RELEASE G" &&
-      this.player.frameX >= this.player.maxFrames
-    ) {
+    if (this.player.frameX >= this.player.maxFrames) {
       this.player.frameX = 1;
       this.player.setState(this.player.previousState || states.STANDING);
     }
+
     if (
       this.player.spawnGrenade &&
       !this.player.hasThrown &&
@@ -270,7 +268,7 @@ export class ThrowingGrenade extends State {
     } else if (input.lastKey === "PRESS up" && this.player.onGround()) {
       this.player.previousState = states.STANDING;
       this.player.setState(states.JUMPING);
-      
+
       if (input.keys.right || input.keys.left) {
         this.player.setState(states.RUNNING);
       } else if (input.keys.down) {

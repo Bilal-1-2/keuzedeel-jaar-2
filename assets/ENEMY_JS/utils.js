@@ -100,17 +100,7 @@ export function drawStatusText(context, input, player, deltaTime, grenades) {
     y += 15;
   });
   // Extra grenade summary (right side)
-  context.fillStyle = "black";
-  context.fillText(`Active: ${grenades.length}`, 185, 25);
-  if (grenades.length > 0) {
-    const g0 = grenades[0];
-    // context.fillText(`#1 X:${Math.round(g0.x)}`, 155, 40);
-    // context.fillText(`#1 Y:${Math.round(g0.y)}`, 155, 55);
-    // context.fillText(`#1 V:${g0.vh.toFixed(1)}/${g0.vy.toFixed(1)}`, 155, 70);
-    // context.fillText(`#1 Ex:${g0.exists}`, 155, 85);
-    context.fillText(`#1 onground:${g0.GrenadeonGround()}`, 155, 40);
-    context.fillText(`#2 gamehieght:${g0.gameHeight}`, 155, 55);
-  }
+
 
   if (grenades.length === 0) {
     context.fillStyle = "#888";
