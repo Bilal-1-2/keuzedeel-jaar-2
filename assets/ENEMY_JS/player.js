@@ -5,6 +5,7 @@ import {
   Jumping,
   Walking,
   ThrowingGrenade,
+  Shooting,
   states,
 } from "./state.js";
 
@@ -19,6 +20,7 @@ export default class Player {
       new Jumping(this),
       new Walking(this),
       new ThrowingGrenade(this),
+      new Shooting(this),
     ];
     this.currentState = this.states[0];
     // this.previousState = states.STANDING;
@@ -45,24 +47,28 @@ export default class Player {
   }
 
   draw(context, deltaTime) {
-    if (this.frameTimer > this.frameInterval) {
+    if (this.frameTimer > this.frameInterval ) {
       if (this.frameX < this.maxFrames) {
         this.frameX++;
-      } else {
+      }
+       else {
         // Only reset to 0 if NOT in throwing grenade state
         if (
-          this.currentState.state !== "THROWING GRANADE" &&
-          this.currentState.state !== "RELOADING"
+          this.currentState.state !== "SHOOTING" 
         ) {
           this.frameX = 0;
-        } else {
-          // Stay on last frame, mark as complete
+        }
+         else {
+          // this.fps = 60
+          this.frameX= 1
           this.animationComplete = true;
+
         }
       }
       this.frameTimer = 0;
     } else {
       this.frameTimer += deltaTime;
+      
     }
 
     if (this.flip) {

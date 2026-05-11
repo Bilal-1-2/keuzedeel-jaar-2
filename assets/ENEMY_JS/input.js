@@ -7,6 +7,7 @@ export default class InputHandler {
       up: false,
       down: false,
       ctrl: false,
+      click: false,
     };
     this.toggles = {
       walkMode: false,
@@ -86,6 +87,23 @@ export default class InputHandler {
           this.lastKey = "RELEASE G";
           break;
       }
+    });
+
+  
+    window.addEventListener("mousedown", (e) => {
+      if (e.button !== 0) return; // left mouse only
+      this.keys.click = true;
+      this.lastKey = "PRESS CLICK";
+    });
+
+    window.addEventListener("mouseup", (e) => {
+      if (e.button !== 0) return;
+      this.keys.click = false;
+      this.lastKey = "RELEASE CLICK";
+    });
+
+    window.addEventListener("blur", () => {
+      this.keys.click = false;
     });
   }
 }

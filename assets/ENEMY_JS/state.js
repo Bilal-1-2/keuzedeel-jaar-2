@@ -5,6 +5,7 @@ export const states = {
   JUMPING: 3,
   WALKING: 4,
   THROWINGGRENADE: 5,
+  SHOOTING: 6,
 };
 
 class State {
@@ -40,6 +41,9 @@ export class Standing extends State {
     } else if (input.lastKey === "PRESS up" && this.player.onGround()) {
       this.player.previousState = states.STANDING;
       this.player.setState(states.JUMPING);
+    } else if (input.lastKey === "PRESS CLICK") {
+      this.player.previousState = states.STANDING;
+      this.player.setState(states.SHOOTING);
     }
     // Held state transition
     if (input.keys.right || input.keys.left) {
@@ -76,12 +80,12 @@ export class Reloading extends State {
       }
     if (input.lastKey === "PRESS up") {
       this.player.setState(states.STANDING);
-    } else if (
-      input.lastKey === "RELEASE reload" &&
-      this.player.frameX >= this.player.maxFrames
-    ) {
+    } else if (this.player.frameX >= this.player.maxFrames) {
       this.player.frameX = 1;
       this.player.setState(this.player.previousState || states.STANDING);
+    } else if (input.lastKey === "PRESS CLICK") {
+      this.player.previousState = states.STANDING;
+      this.player.setState(states.SHOOTING);
     } else if (input.lastKey === "PRESS up" && this.player.onGround()) {
       this.player.previousState = states.RELOADING;
       this.player.setState(states.JUMPING);
@@ -106,6 +110,9 @@ export class Running extends State {
   handleInput(input) {
     if (input.lastKey === "PRESS reload") {
       this.player.setState(states.RELOADING);
+    } else if (input.lastKey === "PRESS CLICK") {
+      this.player.previousState = states.STANDING;
+      this.player.setState(states.SHOOTING);
     } else if (input.lastKey === "PRESS up" && this.player.onGround()) {
       this.player.previousState = states.RUNNING;
       this.player.setState(states.JUMPING);
@@ -170,6 +177,9 @@ export class Jumping extends State {
     if (this.player.onGround()) {
       if (input.keys.right || input.keys.left) {
         this.player.setState(states.RUNNING);
+      } else if (input.lastKey === "PRESS CLICK") {
+        this.player.previousState = states.STANDING;
+        this.player.setState(states.SHOOTING);
       } else if (input.keys.down) {
         this.player.setState(states.RELOADING);
       } else {
@@ -266,6 +276,63 @@ export class ThrowingGrenade extends State {
       );
       this.player.hasThrown = true;
     } else if (input.lastKey === "PRESS up" && this.player.onGround()) {
+      this.player.previousState = states.STANDING;
+      this.player.setState(states.JUMPING);
+    } else if (input.lastKey === "PRESS CLICK") {
+      this.player.previousState = states.STANDING;
+      this.player.setState(states.SHOOTING);
+
+      if (input.keys.right || input.keys.left) {
+        this.player.setState(states.RUNNING);
+      } else if (input.keys.down) {
+        this.player.setState(states.RELOADING);
+      } else {
+        this.player.setState(this.player.previousState || states.STANDING);
+      }
+    }
+  }
+}
+
+export class Shooting extends State {
+  constructor(player) {
+    super("SHOOTING");
+    this.player = player;
+  }
+
+  enter() {
+  // this.player.fps = 60
+    // this.player.hasThrown = false;
+    this.player.frameY = 7;
+    this.player.maxFrames = 3;
+    this.player.speed = 2;
+  }
+
+  handleInput(input) {
+    this.player.speed = 0;
+
+    if (this.player)
+      if (input.keys.right) {
+        this.player.flip = false;
+        this.player.speed = 2;
+      } else if (input.keys.left) {
+        this.player.flip = true;
+        this.player.speed = -2;
+      }
+
+    // if (
+    //   this.player.spawnGrenade &&
+    //   !this.player.hasThrown &&
+    //   this.player.frameX === 7
+    // ) {
+    //   this.player.spawnGrenade(
+    //     this.player.x + (this.player.flip ? -20 : 50), // hand offset
+    //     this.player.y - 90, // hand-position
+    //     !this.player.flip, // direction opposite player face?
+    //   );
+    //   this.player.hasThrown = true;
+    // } else
+
+    if (input.lastKey === "PRESS up" && this.player.onGround()) {
       this.player.previousState = states.STANDING;
       this.player.setState(states.JUMPING);
 
