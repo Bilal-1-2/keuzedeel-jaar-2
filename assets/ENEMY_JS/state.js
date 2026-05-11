@@ -300,11 +300,14 @@ export class Shooting extends State {
   }
 
   enter() {
-  // this.player.fps = 60
+    // reset one-shot flag for every new SHOOTING state
+    this.player.hasShot = false;
+
+    // this.player.fps = 60
     // this.player.hasThrown = false;
     this.player.frameY = 7;
     this.player.maxFrames = 3;
-    this.player.speed = 2;
+    // this.player.speed = 1;
   }
 
   handleInput(input) {
@@ -313,27 +316,27 @@ export class Shooting extends State {
     if (this.player)
       if (input.keys.right) {
         this.player.flip = false;
-        this.player.speed = 2;
+        this.player.speed = 1;
       } else if (input.keys.left) {
         this.player.flip = true;
-        this.player.speed = -2;
+        this.player.speed = -1;
       }
 
-    // if (
-    //   this.player.spawnGrenade &&
-    //   !this.player.hasThrown &&
-    //   this.player.frameX === 7
-    // ) {
-    //   this.player.spawnGrenade(
-    //     this.player.x + (this.player.flip ? -20 : 50), // hand offset
-    //     this.player.y - 90, // hand-position
-    //     !this.player.flip, // direction opposite player face?
-    //   );
-    //   this.player.hasThrown = true;
-    // } else
-
-    if (input.lastKey === "PRESS up" && this.player.onGround()) {
-      this.player.previousState = states.STANDING;
+    if (
+      this.player.spawnBullet && this.player.frameX >= 2
+    ) {
+      this.player.spawnBullet(
+        this.player.x + (this.player.flip ? -20 : 50), // hand offset
+        this.player.y - 70, // hand-position
+        !this.player.flip, // direction opposite player face?
+      );
+    } else if (
+      input.keys.click === false &&
+      this.player.frameX >= this.player.maxFrames
+    ) {
+      this.player.setState(this.player.previousState || states.STANDING);
+    } else if (input.lastKey === "PRESS up" && this.player.onGround()) {
+      // this.player.previousState = states.SHOOTING;
       this.player.setState(states.JUMPING);
 
       if (input.keys.right || input.keys.left) {

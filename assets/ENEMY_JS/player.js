@@ -37,38 +37,46 @@ export default class Player {
     this.speed = 0;
     this.maxSpeed = 10;
     this.flip = false;
+
+    // Base animation fps
     this.fps = 20;
+    // Shooting animation fps target (60)
+    this.shootingFps = 40;
+
     this.frameTimer = 0;
     this.previousState = states.STANDING; // Store previous state
+
+    // Default interval for most states
     this.frameInterval = (1000 / this.fps) * 4;
+
     this.animationComplete = false;
     this.spawnGrenade = spawnGrenade || null; // Optional callback
     this.hasThrown = false; // Prevent spam-spawn per throw
   }
 
   draw(context, deltaTime) {
-    if (this.frameTimer > this.frameInterval ) {
+    // Use faster animation speed while shooting
+    const interval =
+      this.currentState.state === "SHOOTING"
+        ? (1000 / this.shootingFps) * 4
+        : this.frameInterval;
+
+    if (this.frameTimer > interval) {
       if (this.frameX < this.maxFrames) {
         this.frameX++;
-      }
-       else {
+      } else {
         // Only reset to 0 if NOT in throwing grenade state
-        if (
-          this.currentState.state !== "SHOOTING" 
-        ) {
+        if (this.currentState.state !== "SHOOTING") {
           this.frameX = 0;
-        }
-         else {
+        } else {
           // this.fps = 60
-          this.frameX= 1
+          this.frameX = 1;
           this.animationComplete = true;
-
         }
       }
       this.frameTimer = 0;
     } else {
       this.frameTimer += deltaTime;
-      
     }
 
     if (this.flip) {
