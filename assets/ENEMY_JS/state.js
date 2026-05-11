@@ -268,8 +268,9 @@ export class ThrowingGrenade extends State {
       );
       this.player.hasThrown = true;
     } else if (input.lastKey === "PRESS up" && this.player.onGround()) {
-      this.player.previousState = states.RELOADING;
+      this.player.previousState = states.STANDING;
       this.player.setState(states.JUMPING);
+      
       if (input.keys.right || input.keys.left) {
         this.player.setState(states.RUNNING);
       } else if (input.keys.down) {

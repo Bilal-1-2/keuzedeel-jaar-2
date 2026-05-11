@@ -13,10 +13,10 @@ export default class Grenade {
     this.frameX = 0;
     this.frameY = 0;
     this.maxFrame = 6;
-    this.fps = 20;
+    this.fps = 4;
     this.frameTimer = 0;
     this.frameInterval = 1000 / this.fps;
-    this.gravity = 0.25; // acceleration downward
+    this.gravity = 0.4; // acceleration downward
     this.lifetime = 3000; // ms before self-destruct
     this.exists = true;
     this.flip = !facingRight;
@@ -35,25 +35,26 @@ export default class Grenade {
     if (this.GrenadeonGround()) {
       this.y = this.gameHeight - this.height;
       this.vy = 0;
+      this.vh= 0.01
     } else {
       this.vy += this.gravity;
     }
     if (this.y >= this.gameHeight - this.height)
       this.y  = this.gameHeight - this.height;
-
-    // Animation advance
-    this.frameTimer += deltaTime;
-    if (this.frameTimer > this.frameInterval && this.GrenadeonGround()) {
-      this.frameX = (this.frameX + 1) % this.maxFrame;
-      this.frameTimer = 0;
-    }
-
     // Destroy conditions
     const age = Date.now() - this.startTime;
-    if (age > this.lifetime || this.y > this.gameHeight) {
+    if (this.frameX >= this.maxFrame || age > this.lifetime) {
       this.exists = false;
       return;
     }
+    // Animation advance
+    this.frameTimer += deltaTime;
+    if (this.frameTimer > this.frameInterval && this.GrenadeonGround() || age >= 2000) {
+      this.frameX = this.frameX + 1;
+      this.frameTimer = 0;
+    }
+
+
 
     // Optional: screen bounds (grenade can fly offscreen naturally)
     // if (this.x < -this.width) this.exists = false;

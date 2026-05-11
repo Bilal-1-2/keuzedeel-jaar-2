@@ -12,7 +12,7 @@ window.addEventListener("load", function () {
   canvas.width = window.innerWidth;
   canvas.height = this.window.innerHeight;
   const spawnGrenade = (spawnX, spawnY, facingRight) => {
-    grenades.push(new Grenade(spawnX, spawnY, facingRight));
+  grenades.push(new Grenade(spawnX, spawnY, facingRight, canvas.width, canvas.height));
   };
   const player = new Player(canvas.width, canvas.height, spawnGrenade);
 
@@ -30,8 +30,6 @@ window.addEventListener("load", function () {
     // Filter dead (reassign shorter array - efficient for few items)
     grenades = grenades.filter((grenade) => grenade.exists);
 
-    // Draw surviving
-    grenades.forEach((grenade) => grenade.draw(ctx, deltaTime));
 
     // Draw grenades
     grenades.forEach((grenade) => grenade.draw(ctx, deltaTime));
