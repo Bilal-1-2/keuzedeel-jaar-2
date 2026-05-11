@@ -10,7 +10,7 @@ import {
 } from "./state.js";
 
 export default class Player {
-  constructor(gameWidth, gameHeight, spawnGrenade) {
+  constructor(gameWidth, gameHeight, spawnGrenade, spawnBullet) {
     this.gameWidth = gameWidth;
     this.gameHeight = gameHeight;
     this.states = [
@@ -37,6 +37,7 @@ export default class Player {
     this.speed = 0;
     this.maxSpeed = 10;
     this.flip = false;
+    this.magazine = 30;
 
     // Base animation fps
     this.fps = 20;
@@ -51,7 +52,9 @@ export default class Player {
 
     this.animationComplete = false;
     this.spawnGrenade = spawnGrenade || null; // Optional callback
+    this.spawnBullet = spawnBullet || null;
     this.hasThrown = false; // Prevent spam-spawn per throw
+    this.hasShot = false; // Prevent spam-spawn per throw
   }
 
   draw(context, deltaTime) {
@@ -70,7 +73,9 @@ export default class Player {
           this.frameX = 0;
         } else {
           // this.fps = 60
+          this.hasShot = false;
           this.frameX = 1;
+
           this.animationComplete = true;
         }
       }

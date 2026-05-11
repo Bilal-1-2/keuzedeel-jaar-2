@@ -59,6 +59,8 @@ export function drawStatusText(context, input, player, deltaTime, grenades) {
   y += 15;
   context.fillText(`ctrl: ${input.keys.ctrl}`, 10, y);
   y += 15;
+  context.fillText(`magazine: ${player.magazine}`, 10, y);
+  y += 15;
 
   // Ground
   context.fillStyle = player.onGround() ? "#00ff00" : "#ff0000";

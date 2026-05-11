@@ -21,6 +21,7 @@ export class Standing extends State {
   }
 
   enter() {
+    this.player.frameX = 1 ;
     this.player.frameY = 0;
     this.player.speed = 0;
     this.player.maxFrames = 6;
@@ -81,9 +82,10 @@ export class Reloading extends State {
     if (input.lastKey === "PRESS up") {
       this.player.setState(states.STANDING);
     } else if (this.player.frameX >= this.player.maxFrames) {
+      this.player.magazine = 30;
       this.player.frameX = 1;
       this.player.setState(this.player.previousState || states.STANDING);
-    } else if (input.lastKey === "PRESS CLICK") {
+    } else if (input.lastKey === "PRESS CLICK" && this.player.frameX >= this.player.maxFrames) {
       this.player.previousState = states.STANDING;
       this.player.setState(states.SHOOTING);
     } else if (input.lastKey === "PRESS up" && this.player.onGround()) {
@@ -100,6 +102,8 @@ export class Running extends State {
   }
 
   enter() {
+    this.player.frameX = 1 ;
+
     this.player.frameY = 2;
     this.player.maxFrames = 7;
     this.player.speed = this.player.flip
@@ -195,6 +199,8 @@ export class Walking extends State {
   }
 
   enter() {
+    this.player.frameX = 1 ;
+
     this.player.frameY = 1;
     this.player.maxFrames = 6;
     this.player.speed = this.player.flip
@@ -241,6 +247,8 @@ export class ThrowingGrenade extends State {
   }
 
   enter() {
+    this.player.frameX = 1 ;
+
     this.player.hasThrown = false;
     this.player.frameY = 4;
     this.player.maxFrames = 8;
@@ -304,7 +312,7 @@ export class Shooting extends State {
     this.player.hasShot = false;
 
     // this.player.fps = 60
-    // this.player.hasThrown = false;
+    this.player.frameX = 0;
     this.player.frameY = 7;
     this.player.maxFrames = 3;
     // this.player.speed = 1;
@@ -313,7 +321,7 @@ export class Shooting extends State {
   handleInput(input) {
     this.player.speed = 0;
 
-    if (this.player)
+    if (this.player) {
       if (input.keys.right) {
         this.player.flip = false;
         this.player.speed = 1;
@@ -321,27 +329,45 @@ export class Shooting extends State {
         this.player.flip = true;
         this.player.speed = -1;
       }
+    }
 
     if (
-      this.player.spawnBullet && this.player.frameX >= 2
+      this.player.spawnBullet &&
+      // this.player.magazine === 0 &&
+      !this.player.hasShot &&
+      this.player.frameX === 3
     ) {
       this.player.spawnBullet(
-        this.player.x + (this.player.flip ? -20 : 50), // hand offset
-        this.player.y - 70, // hand-position
+        this.player.x + (this.player.flip ? 35 : 90), // hand offset
+        this.player.y +76, // hand-position
         !this.player.flip, // direction opposite player face?
+     
       );
-    } else if (
-      input.keys.click === false &&
-      this.player.frameX >= this.player.maxFrames
-    ) {
+      this.player.hasShot = true; 
+      this.player.magazine = this.player.magazine - 1
+      console.log(this.player.spawnBullet)
+    }
+
+    // Stop shooting immediately when click is released
+    if (input.keys.click === false) {
       this.player.setState(this.player.previousState || states.STANDING);
-    } else if (input.lastKey === "PRESS up" && this.player.onGround()) {
+      // allow next SHOOTING enter() to reset one-shot
+      return;
+    }
+
+    if(this.player.magazine <=0){
       // this.player.previousState = states.SHOOTING;
+        this.player.setState(states.RELOADING);
+    }
+
+
+    if (input.lastKey === "PRESS up" && this.player.onGround()) {
       this.player.setState(states.JUMPING);
 
       if (input.keys.right || input.keys.left) {
         this.player.setState(states.RUNNING);
-      } else if (input.keys.down) {
+      } else if (input.keys.down ) {
+      // this.player.previousState = states.SHOOTING;
         this.player.setState(states.RELOADING);
       } else {
         this.player.setState(this.player.previousState || states.STANDING);
