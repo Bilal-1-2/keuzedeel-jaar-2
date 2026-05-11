@@ -6,6 +6,7 @@ import {
   Walking,
   ThrowingGrenade,
   Shooting,
+  Melee,
   states,
 } from "./state.js";
 
@@ -21,6 +22,7 @@ export default class Player {
       new Walking(this),
       new ThrowingGrenade(this),
       new Shooting(this),
+      new Melee(this),
     ];
     this.currentState = this.states[0];
     // this.previousState = states.STANDING;

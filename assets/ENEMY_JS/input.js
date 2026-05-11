@@ -51,6 +51,11 @@ export default class InputHandler {
           this.keys.g = true;
           this.lastKey = "PRESS G";
           break;
+        case "e":
+        case "E":
+          // this.keys.g = true;
+          this.lastKey = "PRESS E";
+          break;
       }
     });
     window.addEventListener("keyup", (e) => {
@@ -85,6 +90,11 @@ export default class InputHandler {
         case "G":
           this.keys.g = true;
           this.lastKey = "RELEASE G";
+          break;
+        case "e":
+        case "E":
+          // this.keys.g = true;
+          this.lastKey = "RELEASE E";
           break;
       }
     });

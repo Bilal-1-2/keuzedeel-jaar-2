@@ -6,6 +6,7 @@ export const states = {
   WALKING: 4,
   THROWINGGRENADE: 5,
   SHOOTING: 6,
+  MELEE: 7,
 };
 
 class State {
@@ -21,32 +22,39 @@ export class Standing extends State {
   }
 
   enter() {
-    this.player.frameX = 1 ;
+    this.player.frameX = 0;
     this.player.frameY = 0;
     this.player.speed = 0;
     this.player.maxFrames = 6;
   }
 
   handleInput(input) {
-    if (input.lastKey === "PRESS right") {
-      this.player.flip = false;
-      this.player.setState(states.WALKING);
-    } else if (input.lastKey === "PRESS left") {
-      this.player.flip = true;
-      this.player.setState(states.WALKING);
-    } else if (input.lastKey === "PRESS reload") {
+    // PRESS events (one-time)
+    if (input.lastKey === "PRESS up" && this.player.onGround()) {
+      this.player.previousState = states.STANDING;
+      this.player.setState(states.JUMPING);
+    } else if (input.lastKey === "PRESS E") {
+      this.player.previousState = states.STANDING;
+      this.player.setState(states.MELEE);
+    }
+
+    // else if (input.lastKey === "PRESS right") {
+    //   this.player.flip = false;
+    //   this.player.setState(states.WALKING);
+    // } else if (input.lastKey === "PRESS left") {
+    //   this.player.flip = true;
+    //   this.player.setState(states.WALKING);
+    // }
+    else if (input.lastKey === "PRESS reload") {
       this.player.setState(states.RELOADING);
     } else if (input.lastKey === "PRESS G") {
       this.player.frameX = 0;
       this.player.setState(states.THROWINGGRENADE);
-    } else if (input.lastKey === "PRESS up" && this.player.onGround()) {
-      this.player.previousState = states.STANDING;
-      this.player.setState(states.JUMPING);
     } else if (input.lastKey === "PRESS CLICK") {
       this.player.previousState = states.STANDING;
       this.player.setState(states.SHOOTING);
     }
-    // Held state transition
+    // HELD state transitions (every frame)
     if (input.keys.right || input.keys.left) {
       this.player.setState(states.WALKING);
     } else if (input.keys.down) {
@@ -71,26 +79,33 @@ export class Reloading extends State {
   handleInput(input) {
     this.player.speed = 0;
 
-    if (this.player)
-      if (input.keys.right) {
-        this.player.flip = false;
-        this.player.speed = 2;
-      } else if (input.keys.left) {
-        this.player.flip = true;
-        this.player.speed = -2;
-      }
-    if (input.lastKey === "PRESS up") {
-      this.player.setState(states.STANDING);
-    } else if (this.player.frameX >= this.player.maxFrames) {
+    // Movement during reload
+    if (input.keys.right) {
+      this.player.flip = false;
+      this.player.speed = 2;
+    } else if (input.keys.left) {
+      this.player.flip = true;
+      this.player.speed = -2;
+    }
+
+    if (input.lastKey === "PRESS up" && this.player.onGround()) {
+      this.player.previousState = states.RELOADING;
+      this.player.setState(states.JUMPING);
+    } else if (
+      input.keys.click === true &&
+      this.player.frameX >= this.player.maxFrames
+    ) {
+      this.player.previousState = states.STANDING;
+      this.player.setState(states.SHOOTING);
+    } else if (input.lastKey === "PRESS E") {
+      this.player.setState(states.MELEE);
+    }
+
+    // Animation complete
+    if (this.player.frameX >= this.player.maxFrames) {
       this.player.magazine = 30;
       this.player.frameX = 1;
       this.player.setState(this.player.previousState || states.STANDING);
-    } else if (input.lastKey === "PRESS CLICK" && this.player.frameX >= this.player.maxFrames) {
-      this.player.previousState = states.STANDING;
-      this.player.setState(states.SHOOTING);
-    } else if (input.lastKey === "PRESS up" && this.player.onGround()) {
-      this.player.previousState = states.RELOADING;
-      this.player.setState(states.JUMPING);
     }
   }
 }
@@ -102,8 +117,7 @@ export class Running extends State {
   }
 
   enter() {
-    this.player.frameX = 1 ;
-
+    this.player.frameX = 1;
     this.player.frameY = 2;
     this.player.maxFrames = 7;
     this.player.speed = this.player.flip
@@ -112,36 +126,46 @@ export class Running extends State {
   }
 
   handleInput(input) {
+    // PRESS events - check these FIRST
     if (input.lastKey === "PRESS reload") {
       this.player.setState(states.RELOADING);
+      return;
     } else if (input.lastKey === "PRESS CLICK") {
-      this.player.previousState = states.STANDING;
+      this.player.speed = 0;
+      this.player.previousState = states.RUNNING;
       this.player.setState(states.SHOOTING);
+      return;
     } else if (input.lastKey === "PRESS up" && this.player.onGround()) {
       this.player.previousState = states.RUNNING;
       this.player.setState(states.JUMPING);
+      return;
     } else if (input.lastKey === "PRESS G") {
       this.player.speed = 0;
       this.player.frameX = 0;
       this.player.setState(states.THROWINGGRENADE);
+      return;
+    } else if (input.lastKey === "PRESS E") {
+      this.player.setState(states.MELEE);
     }
+
+    // Walk mode toggle
     if (input.toggles.walkMode) {
       this.player.setState(states.WALKING);
       return;
     }
-    // Held logic
-    if (this.player)
-      if (input.keys.right) {
-        this.player.flip = false;
-        this.player.speed = this.player.maxSpeed;
-      } else if (input.keys.left) {
-        this.player.flip = true;
-        this.player.speed = -this.player.maxSpeed;
-      } else if (input.keys.down) {
-        this.player.setState(states.RELOADING);
-      } else {
-        this.player.setState(states.STANDING);
-      }
+
+    // HELD logic (only if no PRESS action was taken)
+    if (input.keys.right) {
+      this.player.flip = false;
+      this.player.speed = this.player.maxSpeed;
+    } else if (input.keys.left) {
+      this.player.flip = true;
+      this.player.speed = -this.player.maxSpeed;
+    } else if (input.keys.down) {
+      this.player.setState(states.RELOADING);
+    } else {
+      this.player.setState(states.STANDING);
+    }
   }
 }
 
@@ -152,14 +176,13 @@ export class Jumping extends State {
   }
 
   enter() {
-    // this.player.frameY = 1;
     if (this.player.onGround()) {
       this.player.vy = -10;
     }
   }
 
   handleInput(input) {
-    // Air control every frame
+    // Air control
     if (input.keys.right) {
       this.player.flip = false;
       this.player.speed = Math.min(
@@ -173,7 +196,6 @@ export class Jumping extends State {
         -this.player.maxSpeed,
       );
     } else {
-      // Friction in air
       this.player.speed *= 0.9;
     }
 
@@ -192,6 +214,7 @@ export class Jumping extends State {
     }
   }
 }
+
 export class Walking extends State {
   constructor(player) {
     super("WALKING");
@@ -199,8 +222,7 @@ export class Walking extends State {
   }
 
   enter() {
-    this.player.frameX = 1 ;
-
+    this.player.frameX = 1;
     this.player.frameY = 1;
     this.player.maxFrames = 6;
     this.player.speed = this.player.flip
@@ -209,22 +231,33 @@ export class Walking extends State {
   }
 
   handleInput(input) {
+    // PRESS events - check these FIRST
     if (input.lastKey === "PRESS reload") {
       this.player.setState(states.RELOADING);
       return;
-    } else if (input.lastKey === "PRESS up" && this.player.onGround()) {
-      this.player.previousState = states.WALKING;
-      this.player.setState(states.JUMPING);
     } else if (input.lastKey === "PRESS G") {
       this.player.speed = 0;
       this.player.frameX = 0;
       this.player.setState(states.THROWINGGRENADE);
+      return; // Stop here, don't process movement
+    } else if (input.lastKey === "PRESS CLICK") {
+      this.player.speed = 0;
+      this.player.previousState = states.WALKING;
+      this.player.setState(states.SHOOTING);
+      return; // Stop here, don't process movement
+    } else if (input.lastKey === "PRESS up" && this.player.onGround()) {
+      this.player.previousState = states.WALKING;
+      this.player.setState(states.JUMPING);
+      return;
     }
-    // Toggle between RUNNING and WALKING with Ctrl
+
+    // Toggle between RUNNING and WALKING
     if (!input.toggles.walkMode) {
       this.player.setState(states.RUNNING);
       return;
     }
+
+    // HELD logic (only if no PRESS action was taken)
     if (input.keys.right) {
       this.player.flip = false;
       this.player.speed = this.player.maxSpeed * 0.5;
@@ -247,56 +280,50 @@ export class ThrowingGrenade extends State {
   }
 
   enter() {
-    this.player.frameX = 1 ;
-
+    this.player.frameX = 1;
     this.player.hasThrown = false;
     this.player.frameY = 4;
     this.player.maxFrames = 8;
-    this.player.speed = 2;
+    this.player.speed = 0;
   }
 
   handleInput(input) {
-    this.player.speed = 0;
-
-    if (this.player)
-      if (input.keys.right) {
-        this.player.flip = false;
-        this.player.speed = 2;
-      } else if (input.keys.left) {
-        this.player.flip = true;
-        this.player.speed = -2;
-      }
-
-    if (this.player.frameX >= this.player.maxFrames) {
-      this.player.frameX = 1;
-      this.player.setState(this.player.previousState || states.STANDING);
+    // Movement during throw - ALLOW movement without breaking animation
+    if (input.keys.right) {
+      this.player.flip = false;
+      this.player.speed = 2;
+    } else if (input.keys.left) {
+      this.player.flip = true;
+      this.player.speed = -2;
+    } else {
+      this.player.speed = 0;
     }
 
+    // Spawn grenade at correct frame
     if (
       this.player.spawnGrenade &&
       !this.player.hasThrown &&
       this.player.frameX === 7
     ) {
       this.player.spawnGrenade(
-        this.player.x + (this.player.flip ? -20 : 50), // hand offset
-        this.player.y - 90, // hand-position
-        !this.player.flip, // direction opposite player face?
+        this.player.x + (this.player.flip ? -20 : 50),
+        this.player.y - 90,
+        !this.player.flip,
       );
       this.player.hasThrown = true;
-    } else if (input.lastKey === "PRESS up" && this.player.onGround()) {
+    }
+
+    // ONLY jump can break/cancel the throw animation
+    if (input.lastKey === "PRESS up" && this.player.onGround()) {
       this.player.previousState = states.STANDING;
       this.player.setState(states.JUMPING);
-    } else if (input.lastKey === "PRESS CLICK") {
-      this.player.previousState = states.STANDING;
-      this.player.setState(states.SHOOTING);
+      return;
+    }
 
-      if (input.keys.right || input.keys.left) {
-        this.player.setState(states.RUNNING);
-      } else if (input.keys.down) {
-        this.player.setState(states.RELOADING);
-      } else {
-        this.player.setState(this.player.previousState || states.STANDING);
-      }
+    // Animation complete - exit normally
+    if (this.player.frameX >= this.player.maxFrames) {
+      this.player.frameX = 1;
+      this.player.setState(this.player.previousState || states.STANDING);
     }
   }
 }
@@ -308,70 +335,113 @@ export class Shooting extends State {
   }
 
   enter() {
-    // reset one-shot flag for every new SHOOTING state
     this.player.hasShot = false;
-
-    // this.player.fps = 60
     this.player.frameX = 0;
     this.player.frameY = 7;
     this.player.maxFrames = 3;
-    // this.player.speed = 1;
   }
 
   handleInput(input) {
     this.player.speed = 0;
 
-    if (this.player) {
-      if (input.keys.right) {
-        this.player.flip = false;
-        this.player.speed = 1;
-      } else if (input.keys.left) {
-        this.player.flip = true;
-        this.player.speed = -1;
-      }
+    // Movement during shooting
+    if (input.keys.right) {
+      this.player.flip = false;
+      this.player.speed = 1;
+    } else if (input.keys.left) {
+      this.player.flip = true;
+      this.player.speed = -1;
     }
 
+    // Spawn bullet at correct frame
     if (
       this.player.spawnBullet &&
-      // this.player.magazine === 0 &&
       !this.player.hasShot &&
       this.player.frameX === 3
     ) {
       this.player.spawnBullet(
-        this.player.x + (this.player.flip ? 35 : 90), // hand offset
-        this.player.y +76, // hand-position
-        !this.player.flip, // direction opposite player face?
-     
+        this.player.x + (this.player.flip ? 35 : 90),
+        this.player.y + 76,
+        !this.player.flip,
       );
-      this.player.hasShot = true; 
-      this.player.magazine = this.player.magazine - 1
-      console.log(this.player.spawnBullet)
+      this.player.hasShot = true;
+      this.player.magazine = this.player.magazine - 1;
     }
 
-    // Stop shooting immediately when click is released
+    // Stop shooting when click released
     if (input.keys.click === false) {
       this.player.setState(this.player.previousState || states.STANDING);
-      // allow next SHOOTING enter() to reset one-shot
       return;
     }
 
-    if(this.player.magazine <=0){
-      // this.player.previousState = states.SHOOTING;
-        this.player.setState(states.RELOADING);
+    // Out of ammo
+    if (this.player.magazine <= 0) {
+      this.player.setState(states.RELOADING);
     }
 
-
+    // PRESS events
     if (input.lastKey === "PRESS up" && this.player.onGround()) {
       this.player.setState(states.JUMPING);
-
-      if (input.keys.right || input.keys.left) {
-        this.player.setState(states.RUNNING);
-      } else if (input.keys.down ) {
-      // this.player.previousState = states.SHOOTING;
-        this.player.setState(states.RELOADING);
-      } else {
-        this.player.setState(this.player.previousState || states.STANDING);
-      }
     }
+    if (input.lastKey === "PRESS reload") {
+      this.player.setState(states.RELOADING);
+    } else if (input.lastKey === "PRESS E") {
+      this.player.previousState = states.SHOOTING;
+      this.player.setState(states.MELEE);
+    }
+  }
+}
+
+export class Melee extends State {
+  constructor(player) {
+    super("MELEE");
+    this.player = player;
+  }
+
+  enter() {
+    this.player.frameX = 0;
+    this.player.frameY = 8;
+    this.player.maxFrames = 2;
+  }
+
+  handleInput(input) {
+    this.player.speed = 0;
+
+    // Movement during melee
+    if (input.keys.right) {
+      this.player.flip = false;
+      this.player.speed = 1;
+    } else if (input.keys.left) {
+      this.player.flip = true;
+      this.player.speed = -1;
+    }
+
+    // // Spawn bullet at correct frame
+    // if (
+    //   this.player.spawnBullet &&
+    //   !this.player.hasShot &&
+    //   this.player.frameX === 3
+    // ) {
+    //   this.player.spawnBullet(
+    //     this.player.x + (this.player.flip ? 35 : 90),
+    //     this.player.y + 76,
+    //     !this.player.flip,
+    //   );
+    //   this.player.hasShot = true;
+    //   this.player.magazine = this.player.magazine - 1;
+    // }
+
+    // Stop shooting when click released
+    if (this.player.frameX >= this.player.maxFrames) {
+      this.player.setState(this.player.previousState || states.STANDING);
+      return;
+    }
+
+    // if (input.lastKey === "PRESS up" && this.player.onGround()) {
+    //   this.player.setState(states.JUMPING);
+    // }
+    // if (input.lastKey === "PRESS reload") {
+    //   this.player.setState(states.RELOADING);
+    // }
   }
 }
