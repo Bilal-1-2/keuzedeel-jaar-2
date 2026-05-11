@@ -7,6 +7,7 @@ import {
   ThrowingGrenade,
   Shooting,
   Melee,
+  Dead,
   states,
 } from "./state.js";
 
@@ -23,6 +24,7 @@ export default class Player {
       new ThrowingGrenade(this),
       new Shooting(this),
       new Melee(this),
+      new Dead(this),
     ];
     this.currentState = this.states[0];
     // this.previousState = states.STANDING;
@@ -39,7 +41,11 @@ export default class Player {
     this.speed = 0;
     this.maxSpeed = 10;
     this.flip = false;
+    // player stats
     this.magazine = 30;
+    this.health = 100;
+    this.isDead = false;
+    this.isAlive = true 
 
     // Base animation fps
     this.fps = 20;

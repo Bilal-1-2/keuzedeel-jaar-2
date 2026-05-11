@@ -7,6 +7,7 @@ export const states = {
   THROWINGGRENADE: 5,
   SHOOTING: 6,
   MELEE: 7,
+  DEAD: 7,
 };
 
 class State {
@@ -397,13 +398,11 @@ export class Melee extends State {
     super("MELEE");
     this.player = player;
   }
-
   enter() {
     this.player.frameX = 0;
     this.player.frameY = 8;
     this.player.maxFrames = 2;
   }
-
   handleInput(input) {
     this.player.speed = 0;
 
@@ -416,32 +415,32 @@ export class Melee extends State {
       this.player.speed = -1;
     }
 
-    // // Spawn bullet at correct frame
-    // if (
-    //   this.player.spawnBullet &&
-    //   !this.player.hasShot &&
-    //   this.player.frameX === 3
-    // ) {
-    //   this.player.spawnBullet(
-    //     this.player.x + (this.player.flip ? 35 : 90),
-    //     this.player.y + 76,
-    //     !this.player.flip,
-    //   );
-    //   this.player.hasShot = true;
-    //   this.player.magazine = this.player.magazine - 1;
-    // }
-
-    // Stop shooting when click released
     if (this.player.frameX >= this.player.maxFrames) {
       this.player.setState(this.player.previousState || states.STANDING);
       return;
     }
+  }
+}
 
-    // if (input.lastKey === "PRESS up" && this.player.onGround()) {
-    //   this.player.setState(states.JUMPING);
-    // }
-    // if (input.lastKey === "PRESS reload") {
-    //   this.player.setState(states.RELOADING);
-    // }
+export class Dead extends State {
+  constructor(player) {
+    super("DEAD");
+    this.player = player;
+  }
+  enter() {
+    this.player.frameX = 0;
+    this.player.frameY = 10;
+    this.player.maxFrames = 3;
+    this.player.isDead = true;
+    this.player.isAlive = false;
+  }
+  handleInput(input) {
+    this.player.speed = 0;
+
+    if (this.player.frameX >= this.player.maxFrames) {
+      this.player.frameX = 3;
+
+      return;
+    }
   }
 }
