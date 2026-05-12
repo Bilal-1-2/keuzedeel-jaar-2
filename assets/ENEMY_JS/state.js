@@ -31,9 +31,11 @@ export class Standing extends State {
 
   handleInput(input) {
     // PRESS events (one-time)
-    if (this.player.health <= 0) {
+    if (this.player.health <= 0 && this.player.previousState !== states.DEAD) {
+      console.log("Dead anim: 2");
       this.player.setState(states.DEAD);
     }
+
     if (input.lastKey === "PRESS up" && this.player.onGround()) {
       this.player.previousState = states.STANDING;
       this.player.setState(states.JUMPING);
@@ -92,20 +94,22 @@ export class Reloading extends State {
       this.player.flip = true;
       this.player.speed = -2;
     }
-    if (this.player.health <= 0) {
+    if (this.player.health <= 0 && this.player.previousState !== states.DEAD) {
+      console.log("Dead anim: 3");
       this.player.setState(states.DEAD);
     }
+
     if (input.lastKey === "PRESS up" && this.player.onGround()) {
       this.player.previousState = states.RELOADING;
       this.player.setState(states.JUMPING);
-    } 
+    }
     // else if (
     //   input.keys.click === true &&
     //   this.player.frameX >= this.player.maxFrames
     // ) {
     //   this.player.previousState = states.STANDING;
     //   this.player.setState(states.SHOOTING);
-    // } 
+    // }
     else if (input.lastKey === "PRESS E") {
       this.player.setState(states.MELEE);
     }
@@ -138,9 +142,11 @@ export class Running extends State {
 
   handleInput(input) {
     // PRESS events - check these FIRST
-    if (this.player.health <= 0) {
+    if (this.player.health <= 0 && this.player.previousState !== states.DEAD) {
       this.player.setState(states.DEAD);
+      console.log("Dead anim: 4");
     }
+
     if (input.lastKey === "PRESS reload") {
       this.player.setState(states.RELOADING);
       return;
@@ -214,9 +220,11 @@ export class Jumping extends State {
     }
 
     // Landing
-    if (this.player.health <= 0) {
+    if (this.player.health <= 0 && this.player.previousState !== states.DEAD) {
       this.player.setState(states.DEAD);
+      console.log("Dead anim: 5");
     }
+
     if (this.player.onGround()) {
       if (input.keys.right || input.keys.left) {
         this.player.setState(states.RUNNING);
@@ -249,9 +257,11 @@ export class Walking extends State {
 
   handleInput(input) {
     // PRESS events - check these FIRST
-    if (this.player.health <= 0) {
+    if (this.player.health <= 0 && this.player.previousState !== states.DEAD) {
       this.player.setState(states.DEAD);
+      console.log("Dead anim: 6");
     }
+
     if (input.lastKey === "PRESS reload") {
       this.player.setState(states.RELOADING);
       return;
@@ -326,17 +336,19 @@ export class ThrowingGrenade extends State {
       this.player.frameX === 7
     ) {
       this.player.spawnGrenade(
-        this.player.x + (this.player.flip ? -20 : 50),
-        this.player.y - 90,
+        this.player.x + (this.player.flip ? -20 : 20),
+        this.player.y - 80,
         !this.player.flip,
       );
       this.player.hasThrown = true;
     }
 
     // ONLY jump can break/cancel the throw animation
-    if (this.player.health <= 0) {
+    if (this.player.health <= 0 && this.player.previousState !== states.DEAD) {
       this.player.setState(states.DEAD);
+      console.log("Dead anim: 7");
     }
+
     if (input.lastKey === "PRESS up" && this.player.onGround()) {
       this.player.previousState = states.STANDING;
       this.player.setState(states.JUMPING);
@@ -367,9 +379,11 @@ export class Shooting extends State {
   handleInput(input) {
     this.player.speed = 0;
 
-    if (this.player.health <= 0) {
+    if (this.player.health <= 0 && this.player.previousState !== states.DEAD) {
       this.player.setState(states.DEAD);
+      console.log("Dead anim: 8");
     }
+
     // Movement during shooting
     if (input.keys.right) {
       this.player.flip = false;
@@ -412,7 +426,7 @@ export class Shooting extends State {
     if (input.lastKey === "PRESS reload") {
       this.player.setState(states.RELOADING);
     } else if (input.lastKey === "PRESS E") {
-      this.player.previousState = states.SHOOTING;
+      // this.player.previousState = states.SHOOTING;
       this.player.setState(states.MELEE);
     }
   }
@@ -431,9 +445,11 @@ export class Melee extends State {
   handleInput(input) {
     this.player.speed = 0;
 
-    if (this.player.health <= 0) {
+    if (this.player.health <= 0 && this.player.previousState !== states.DEAD) {
       this.player.setState(states.DEAD);
+      console.log("Dead anim: 9");
     }
+
     // Movement during melee
     if (input.keys.right) {
       this.player.flip = false;
@@ -444,8 +460,12 @@ export class Melee extends State {
     }
 
     if (this.player.frameX >= this.player.maxFrames) {
-      this.player.setState(this.player.previousState || states.STANDING);
-      return;
+      if (input.keys.click === true) {
+        this.player.setState(states.SHOOTING);
+      } else {
+        this.player.setState(this.player.previousState || states.STANDING);
+        return;
+      }
     }
   }
 }
@@ -455,9 +475,12 @@ export class Dead extends State {
     super("DEAD");
     this.player = player;
     this.deathTimer = 0;
+
+    console.log("dead");
   }
 
   enter() {
+    this.player.previousState = states.DEAD;
     this.player.frameX = 0;
     this.player.frameY = 10;
     this.player.maxFrames = 3;

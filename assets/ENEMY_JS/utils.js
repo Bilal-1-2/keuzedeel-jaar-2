@@ -7,7 +7,7 @@ export function attachHealthButton(player) {
     if (player && !player.isDead) {
       player.health = Math.max(0, (player.health || 0) - 25);
       if (player.health <= 0) {
-        player.setState(7);
+        player.setState(8);
       }
     }
   });

@@ -88,6 +88,7 @@ export default class Player {
         } else if (this.currentState.state === "DEAD") {
           // Clamp to last death frame and stop advancing
           this.frameX = this.maxFrames;
+          console.log("Dead anim: 2");
         }
       }
       this.frameTimer = 0;
@@ -143,7 +144,8 @@ export default class Player {
     if (this.y >= this.gameHeight - this.height)
       this.y = this.gameHeight - this.height;
 
-    if (this.health <= 0) {
+    if (this.health <= 0 && !this.isDead) {
+      console.log("Dead anim 4");
       this.setState(states.DEAD);
     }
   }
