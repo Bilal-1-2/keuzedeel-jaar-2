@@ -1,5 +1,18 @@
 import Grenade from "./grenade.js";
 
+export function attachHealthButton(player) {
+  const btn = document.getElementById("healthDamageBtn");
+  if (!btn) return;
+  btn.addEventListener("click", () => {
+    if (player && !player.isDead) {
+      player.health = Math.max(0, (player.health || 0) - 25);
+      if (player.health <= 0) {
+        player.setState(7);
+      }
+    }
+  });
+}
+
 export function drawStatusText(context, input, player, deltaTime, grenades) {
   // Default to enabled
   drawStatusText.debugOn ??= true;
@@ -61,6 +74,8 @@ export function drawStatusText(context, input, player, deltaTime, grenades) {
   y += 15;
   context.fillText(`magazine: ${player.magazine}`, 10, y);
   y += 15;
+  context.fillText(`health: ${player.health}`, 10, y);
+  y += 15;
 
   // Ground
   context.fillStyle = player.onGround() ? "#00ff00" : "#ff0000";
@@ -102,7 +117,6 @@ export function drawStatusText(context, input, player, deltaTime, grenades) {
     y += 15;
   });
   // Extra grenade summary (right side)
-
 
   if (grenades.length === 0) {
     context.fillStyle = "#888";

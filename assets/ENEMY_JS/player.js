@@ -16,15 +16,15 @@ export default class Player {
     this.gameWidth = gameWidth;
     this.gameHeight = gameHeight;
     this.states = [
-      new Standing(this),
-      new Reloading(this),
-      new Running(this),
-      new Jumping(this),
-      new Walking(this),
-      new ThrowingGrenade(this),
-      new Shooting(this),
-      new Melee(this),
-      new Dead(this),
+      new Standing(this), // 0
+      new Reloading(this), // 1
+      new Running(this), // 2
+      new Jumping(this), // 3
+      new Walking(this), // 4
+      new ThrowingGrenade(this), // 5
+      new Shooting(this), // 6
+      new Melee(this), // 7
+      new Dead(this), // 8
     ];
     this.currentState = this.states[0];
     // this.previousState = states.STANDING;
@@ -45,7 +45,7 @@ export default class Player {
     this.magazine = 30;
     this.health = 100;
     this.isDead = false;
-    this.isAlive = true 
+    this.isAlive = true;
 
     // Base animation fps
     this.fps = 20;
@@ -76,15 +76,18 @@ export default class Player {
       if (this.frameX < this.maxFrames) {
         this.frameX++;
       } else {
-        // Only reset to 0 if NOT in throwing grenade state
-        if (this.currentState.state !== "SHOOTING") {
+        if (
+          this.currentState.state !== "SHOOTING" &&
+          this.currentState.state !== "DEAD"
+        ) {
           this.frameX = 0;
-        } else {
-          // this.fps = 60
+        } else if (this.currentState.state === "SHOOTING") {
           this.hasShot = false;
           this.frameX = 1;
-
           this.animationComplete = true;
+        } else if (this.currentState.state === "DEAD") {
+          // Clamp to last death frame and stop advancing
+          this.frameX = this.maxFrames;
         }
       }
       this.frameTimer = 0;
@@ -92,6 +95,7 @@ export default class Player {
       this.frameTimer += deltaTime;
     }
 
+    // Rest of draw method remains the same...
     if (this.flip) {
       context.save();
       context.scale(-1, 1);
@@ -138,6 +142,10 @@ export default class Player {
     }
     if (this.y >= this.gameHeight - this.height)
       this.y = this.gameHeight - this.height;
+
+    if (this.health <= 0) {
+      this.setState(states.DEAD);
+    }
   }
 
   setState(state) {
