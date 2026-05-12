@@ -51,7 +51,7 @@ export class Standing extends State {
     //   this.player.flip = true;
     //   this.player.setState(states.WALKING);
     // }
-    else if (input.lastKey === "PRESS reload") {
+    else if (input.lastKey === "PRESS reload" && this.player.magazine < 30) {
       this.player.setState(states.RELOADING);
     } else if (input.lastKey === "PRESS G") {
       this.player.frameX = 0;
@@ -64,7 +64,9 @@ export class Standing extends State {
     if (input.keys.right || input.keys.left) {
       this.player.setState(states.WALKING);
     } else if (input.keys.down) {
-      this.player.setState(states.RELOADING);
+      if (this.player.magazine < 30) {
+        this.player.setState(states.RELOADING);
+      }
     }
   }
 }
@@ -83,43 +85,56 @@ export class Reloading extends State {
   }
 
   handleInput(input) {
-    this.player.speed = 0;
-    // Animation complete
-
-    // Movement during reload
-    if (input.keys.right) {
-      this.player.flip = false;
-      this.player.speed = 2;
-    } else if (input.keys.left) {
-      this.player.flip = true;
-      this.player.speed = -2;
-    }
-    if (this.player.health <= 0 && this.player.previousState !== states.DEAD) {
-      console.log("Dead anim: 3");
-      this.player.setState(states.DEAD);
-    }
-
-    if (input.lastKey === "PRESS up" && this.player.onGround()) {
-      this.player.previousState = states.RELOADING;
-      this.player.setState(states.JUMPING);
-    }
-    // else if (
-    //   input.keys.click === true &&
-    //   this.player.frameX >= this.player.maxFrames
-    // ) {
-    //   this.player.previousState = states.STANDING;
-    //   this.player.setState(states.SHOOTING);
-    // }
-    else if (input.lastKey === "PRESS E") {
-      this.player.setState(states.MELEE);
-    }
-    if (this.player.frameX >= this.player.maxFrames) {
+    if (this.player.magazine >= 30) {
       this.player.magazine = 30;
+      // stop reload state immediately
+      this.player.speed = 0;
       this.player.frameX = 1;
-      if (input.keys.click === true) {
-        this.player.setState(states.SHOOTING);
-      } else {
-        this.player.setState(this.player.previousState || states.STANDING);
+      this.player.setState(this.player.previousState || states.STANDING);
+      return;
+    } else {
+      this.player.speed = 0;
+      // Animation complete
+
+      // Movement during reload
+
+      if (input.keys.right) {
+        this.player.flip = false;
+        this.player.speed = 2;
+      } else if (input.keys.left) {
+        this.player.flip = true;
+        this.player.speed = -2;
+      }
+      if (
+        this.player.health <= 0 &&
+        this.player.previousState !== states.DEAD
+      ) {
+        console.log("Dead anim: 3");
+        this.player.setState(states.DEAD);
+      }
+
+      if (input.lastKey === "PRESS up" && this.player.onGround()) {
+
+        this.player.setState(states.JUMPING);
+      }
+      // else if (
+      //   input.keys.click === true &&
+      //   this.player.frameX >= this.player.maxFrames
+      // ) {
+      //   this.player.previousState = states.STANDING;
+      //   this.player.setState(states.SHOOTING);
+      // }
+      else if (input.lastKey === "PRESS E") {
+        this.player.setState(states.MELEE);
+      }
+      if (this.player.frameX >= this.player.maxFrames) {
+        this.player.magazine = 30;
+        this.player.frameX = 1;
+        if (input.keys.click === true) {
+          this.player.setState(states.SHOOTING);
+        } else {
+          this.player.setState(this.player.previousState || states.STANDING);
+        }
       }
     }
   }
@@ -147,7 +162,7 @@ export class Running extends State {
       console.log("Dead anim: 4");
     }
 
-    if (input.lastKey === "PRESS reload") {
+    if (input.lastKey === "PRESS reload" && !this.player.magazine >= 30) {
       this.player.setState(states.RELOADING);
       return;
     } else if (input.lastKey === "PRESS CLICK") {
@@ -182,7 +197,9 @@ export class Running extends State {
       this.player.flip = true;
       this.player.speed = -this.player.maxSpeed;
     } else if (input.keys.down) {
-      this.player.setState(states.RELOADING);
+      if (this.player.magazine < 30) {
+        this.player.setState(states.RELOADING);
+      }
     } else {
       this.player.setState(states.STANDING);
     }
@@ -262,7 +279,7 @@ export class Walking extends State {
       console.log("Dead anim: 6");
     }
 
-    if (input.lastKey === "PRESS reload") {
+    if (input.lastKey === "PRESS reload" && this.player.magazine < 30) {
       this.player.setState(states.RELOADING);
       return;
     } else if (input.lastKey === "PRESS G") {
@@ -416,18 +433,25 @@ export class Shooting extends State {
 
     // Out of ammo
     if (this.player.magazine <= 0) {
-      this.player.setState(states.RELOADING);
+      if (this.player.magazine < 30) {
+        this.player.setState(states.RELOADING);
+      }
     }
 
     // PRESS events
     if (input.lastKey === "PRESS up" && this.player.onGround()) {
       this.player.setState(states.JUMPING);
+      return;
     }
-    if (input.lastKey === "PRESS reload") {
+
+    if (input.lastKey === "PRESS reload" && this.player.magazine < 30) {
       this.player.setState(states.RELOADING);
-    } else if (input.lastKey === "PRESS E") {
-      // this.player.previousState = states.SHOOTING;
+      return;
+    }
+
+    if (input.lastKey === "PRESS E") {
       this.player.setState(states.MELEE);
+      return;
     }
   }
 }
