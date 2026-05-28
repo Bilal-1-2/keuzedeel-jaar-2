@@ -3,8 +3,14 @@ import Grenade from "./grenade.js";
 import Bullet from "./bullets.js";
 import InputHandler from "./input.js";
 import { drawStatusText, attachHealthButton } from "./utils.js";
+import { Background } from "./background.js";
+
 let grenades = [];
 let bullets = [];
+let backgroundLayers = [];
+
+// game object shared with background layers
+const game = { speed: 3 };
 
 window.addEventListener("load", function () {
   const laoding = document.getElementById("laoding");
@@ -58,7 +64,14 @@ window.addEventListener("load", function () {
     bullets.forEach((bullet) => bullet.draw(ctx, deltaTime));
 
     player.update(input);
+
+    
+
+    // Update background layers if any
+    backgroundLayers.forEach((layer) => layer.update());
+
     player.draw(ctx, deltaTime);
+
     drawStatusText(ctx, input, player, deltaTime, grenades, bullets);
     requestAnimationFrame(animate);
   }
