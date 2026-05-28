@@ -29,12 +29,26 @@ export default class Player {
     this.currentState = this.states[0];
     // this.previousState = states.STANDING;
     this.image = document.getElementById("soldier");
+
+    // Render sprite size (full frame)
     this.width = 128;
     this.height = 128;
-    this.playerheight=68;
-    this.playerwidth=32;
-    this.x = this.gameWidth / 2 - this.width / 2;
-    this.y = this.gameHeight / 2 - this.height;
+
+    // Real hitbox / position box (actual character size)
+    this.playerheight = 68;
+    this.playerwidth = 32;
+
+    // Start so the hitbox is centered horizontally, and sits slightly above the bottom.
+    // (Note: script.js will override x/y, but this keeps Player defaults correct.)
+    this.x = this.playerwidth / 2;
+
+    // How far above the ground the player should rest (in px)
+    this.floorOffset = 12;
+    this.y = this.gameHeight - this.playerheight - this.floorOffset;
+
+    // These are kept for drawing sprite frames (full sprite size). Do not change.
+    this.width = 128;
+    this.height = 128;
     this.vy = 0;
     this.weight = 0.5;
     this.frameX = 0;
@@ -49,7 +63,6 @@ export default class Player {
     this.isDead = false;
     this.isAlive = true;
     this.grenades = 5;
-  
 
     // Base animation fps
     this.fps = 20;
@@ -70,6 +83,19 @@ export default class Player {
   }
 
   draw(context, deltaTime) {
+    // Hitbox debug (actual character size)
+    context.strokeStyle = "red";
+    // Place hitbox on the bottom of the sprite (not centered vertically)
+    context.strokeRect(
+      this.flip
+        ? this.x + (this.width - this.playerwidth + 20) / 2
+        : this.x + (this.width - this.playerwidth - 20) / 2,
+      // Lift the CHARACTER (position box) + hitbox upward by paddingBottom
+      this.y + (this.height - this.playerheight - (this.paddingBottom || 0)),
+      this.playerwidth,
+      this.playerheight,
+    );
+
     // Use faster animation speed while shooting
     const interval =
       this.currentState.state === "SHOOTING"
@@ -137,9 +163,9 @@ export default class Player {
     this.x += this.speed;
 
     // CHANGE THIS: Use worldWidth instead of gameWidth
-if (this.x <= 0) this.x = 0;
-  else if (this.x >= window.worldWidth - this.width)
-    this.x = window.worldWidth - this.width;
+    if (this.x <= 0) this.x = 0;
+    else if (this.x >= window.worldWidth - this.width)
+      this.x = window.worldWidth - this.width;
 
     this.y += this.vy;
     if (!this.onGround()) {
@@ -147,8 +173,8 @@ if (this.x <= 0) this.x = 0;
     } else {
       this.vy = 0;
     }
-    if (this.y >= this.gameHeight - this.height)
-      this.y = this.gameHeight - this.height;
+    const groundY = this.gameHeight - this.height - this.floorOffset;
+    if (this.y >= groundY) this.y = groundY;
 
     if (this.health <= 0 && !this.isDead) {
       console.log("Dead anim 4");
@@ -162,6 +188,7 @@ if (this.x <= 0) this.x = 0;
   }
 
   onGround() {
-    return this.y >= this.gameHeight - this.height;
+    const groundY = this.gameHeight - this.height - this.floorOffset;
+    return this.y >= groundY;
   }
 }

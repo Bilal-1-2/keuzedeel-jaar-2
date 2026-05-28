@@ -4,6 +4,7 @@ import Bullet from "./bullets.js";
 import InputHandler from "./input.js";
 import { drawStatusText, attachHealthButton } from "./utils.js";
 import { Background } from "./background.js";
+import { Enemy } from "./enemy.js";
 
 let grenades = [];
 let bullets = [];
@@ -35,9 +36,16 @@ window.addEventListener("load", function () {
   canvas.height = window.innerHeight;
 
   const spawnGrenade = (spawnX, spawnY, facingRight) => {
-    grenades.push(
-      new Grenade(spawnX, spawnY, facingRight, canvas.width, canvas.height),
+    const g = new Grenade(
+      spawnX,
+      spawnY,
+      facingRight,
+      canvas.width,
+      canvas.height,
     );
+    // Match the player's “lifted from bottom” feel
+    g.floorOffset = player.floorOffset;
+    grenades.push(g);
   };
 
   const spawnBullet = (spawnX, spawnY, facingRight) => {
@@ -53,9 +61,10 @@ window.addEventListener("load", function () {
     spawnBullet,
   );
 
-  // Start player in the middle of the world
-  player.x = window.worldWidth / 2 - player.width / 2;
-  player.y = canvas.height - player.height;
+  // Start player: hitbox centered, and sits on the bottom of the screen
+  // (player.nx/y are used for both sprite drawing and hitbox debug)
+  player.x = (player.width - player.playerwidth) / 2;
+  player.y = canvas.height - player.playerheight - player.floorOffset;
 
   attachHealthButton(player);
 

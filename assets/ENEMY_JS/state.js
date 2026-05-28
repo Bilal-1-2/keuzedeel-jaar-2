@@ -415,7 +415,7 @@ export class Shooting extends State {
     if (
       this.player.spawnBullet &&
       !this.player.hasShot &&
-      this.player.frameX === 3
+      this.player.frameX === 2
     ) {
       this.player.spawnBullet(
         this.player.x + (this.player.flip ? 35 : 90),

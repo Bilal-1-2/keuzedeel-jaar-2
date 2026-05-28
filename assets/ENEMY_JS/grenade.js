@@ -32,15 +32,19 @@ export default class Grenade {
     // Vertical physics - gravity arc (thrown trajectory)
 
     this.y += this.vy;
+
+    // Stop grenade slightly above the floor (same “not glued to bottom” feel as the player)
+    const groundY = this.gameHeight - this.height - (this.floorOffset || 0);
+
     if (this.GrenadeonGround()) {
-      this.y = this.gameHeight - this.height;
+      this.y = groundY;
       this.vy = 0;
-      this.vh= 0.01
+      this.vh = 0.01;
     } else {
       this.vy += this.gravity;
     }
-    if (this.y >= this.gameHeight - this.height)
-      this.y  = this.gameHeight - this.height;
+
+    if (this.y >= groundY) this.y = groundY;
     // Destroy conditions
     const age = Date.now() - this.startTime;
     if (this.frameX >= this.maxFrame || age > this.lifetime) {
@@ -49,12 +53,13 @@ export default class Grenade {
     }
     // Animation advance
     this.frameTimer += deltaTime;
-    if (this.frameTimer > this.frameInterval && this.GrenadeonGround() || age >= 2000) {
+    if (
+      (this.frameTimer > this.frameInterval && this.GrenadeonGround()) ||
+      age >= 2000
+    ) {
       this.frameX = this.frameX + 1;
       this.frameTimer = 0;
     }
-
-
 
     // Optional: screen bounds (grenade can fly offscreen naturally)
     // if (this.x >= this.gameWidth -this.width) this.exists = false;
@@ -98,6 +103,8 @@ export default class Grenade {
   }
 
   GrenadeonGround() {
-    return this.y >= this.gameHeight - this.height;
+    const groundY = this.gameHeight - this.height - (this.floorOffset || 0);
+    return this.y >= groundY;
   }
+
 }
