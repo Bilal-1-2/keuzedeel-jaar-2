@@ -86,13 +86,14 @@ export function drawStatusText(context, input, player, deltaTime, grenades) {
   // Game dims
   context.fillText(`GameW/H: ${player.gameWidth}/${player.gameHeight}`, 10, y);
   y += 15;
-
+  context.fillText(`GRENADES : ${player.grenades}`, 10, y);
   // Grenade Debug Section
-  y += 10;
+  y += 25;
   context.fillStyle = "rgba(0,0,0,0.6)";
   context.fillRect(8, y - 12, 284, 18);
   context.fillStyle = "white";
   context.fillText(`GRENADES (${grenades.length})`, 10, y);
+
   y += 18;
   context.fillStyle = "black";
 

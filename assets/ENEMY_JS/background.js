@@ -9,13 +9,18 @@ class Layer {
     this.y = 0;
   }
 
-  update() {
-    // Move the layer based on game speed and layer's speed modifier
-    this.x -= this.game.speed * this.speedModifier;
-
-    // Reset position when fully scrolled off to create seamless loop
-    if (this.x <= -this.width) {
-      this.x = 0;
+  // CHANGE THIS METHOD - use camera position instead of game.speed
+  update(cameraX) {
+    // Calculate background position based on camera (creates parallax)
+    // The background moves opposite to camera direction
+    this.x = -cameraX * this.speedModifier;
+    
+    // Wrap around for seamless scrolling
+    while (this.x <= -this.width) {
+      this.x += this.width;
+    }
+    while (this.x > 0) {
+      this.x -= this.width;
     }
   }
 
@@ -50,7 +55,7 @@ export class Background {
   constructor(game) {
     this.game = game;
     this.width = 1667;
-    this.height = 500;
+    this.height = 786;
 
     // Get all the different layer images from HTML
     this.layer1Image = document.getElementById("layer1");
@@ -84,49 +89,49 @@ export class Background {
       this.game,
       this.width,
       this.height,
-      0.02,
+      0.09,
       this.layer3Image,
     );
     this.layer4 = new Layer(
       this.game,
       this.width,
       this.height,
-      0.4,
+      0.6,
       this.layer4Image,
     );
     this.layer5 = new Layer(
       this.game,
       this.width,
       this.height,
-      0.5,
+      0.4,
       this.layer5Image,
     );
     this.layer6 = new Layer(
       this.game,
       this.width,
       this.height,
-      0.6,
+      0.65,
       this.layer6Image,
     );
     this.layer7 = new Layer(
       this.game,
       this.width,
       this.height,
-      0.7,
+      0.65,
       this.layer7Image,
     );
     this.layer8 = new Layer(
       this.game,
       this.width,
       this.height,
-      0.8,
+      1,
       this.layer8Image,
     );
     this.layer9 = new Layer(
       this.game,
       this.width,
       this.height,
-      1.0,
+      0.85,
       this.layer9Image,
     ); // closest (fastest)
 
@@ -143,9 +148,10 @@ export class Background {
     ];
   }
 
-  update() {
+   //  accept cameraX parameter
+  update(cameraX) {
     this.backgroundLayers.forEach((layer) => {
-      layer.update();
+      layer.update(cameraX);
     });
   }
 
@@ -155,3 +161,4 @@ export class Background {
     });
   }
 }
+

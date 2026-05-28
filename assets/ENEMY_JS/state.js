@@ -53,7 +53,7 @@ export class Standing extends State {
     // }
     else if (input.lastKey === "PRESS reload" && this.player.magazine < 30) {
       this.player.setState(states.RELOADING);
-    } else if (input.lastKey === "PRESS G") {
+    } else if (input.lastKey === "PRESS G" && this.player.grenades > 0) {
       this.player.frameX = 0;
       this.player.setState(states.THROWINGGRENADE);
     } else if (input.lastKey === "PRESS CLICK") {
@@ -174,7 +174,7 @@ export class Running extends State {
       this.player.previousState = states.RUNNING;
       this.player.setState(states.JUMPING);
       return;
-    } else if (input.lastKey === "PRESS G") {
+    } else if (input.lastKey === "PRESS G" && this.player.grenades > 0) {
       this.player.speed = 0;
       this.player.frameX = 0;
       this.player.setState(states.THROWINGGRENADE);
@@ -282,7 +282,7 @@ export class Walking extends State {
     if (input.lastKey === "PRESS reload" && this.player.magazine < 30) {
       this.player.setState(states.RELOADING);
       return;
-    } else if (input.lastKey === "PRESS G") {
+    } else if (input.lastKey === "PRESS G" && this.player.grenades > 0) {
       this.player.speed = 0;
       this.player.frameX = 0;
       this.player.setState(states.THROWINGGRENADE);
@@ -358,6 +358,7 @@ export class ThrowingGrenade extends State {
         !this.player.flip,
       );
       this.player.hasThrown = true;
+      this.player.grenades = this.player.grenades - 1;
     }
 
     // ONLY jump can break/cancel the throw animation

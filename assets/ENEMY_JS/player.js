@@ -31,6 +31,8 @@ export default class Player {
     this.image = document.getElementById("soldier");
     this.width = 128;
     this.height = 128;
+    this.playerheight=68;
+    this.playerwidth=32;
     this.x = this.gameWidth / 2 - this.width / 2;
     this.y = this.gameHeight / 2 - this.height;
     this.vy = 0;
@@ -46,11 +48,13 @@ export default class Player {
     this.health = 100;
     this.isDead = false;
     this.isAlive = true;
+    this.grenades = 5;
+  
 
     // Base animation fps
     this.fps = 20;
     // Shooting animation fps target (60)
-    this.shootingFps = 40;
+    this.shootingFps = 60;
 
     this.frameTimer = 0;
     this.previousState = states.STANDING; // Store previous state
@@ -127,13 +131,15 @@ export default class Player {
     }
   }
 
+  // In player.js, update the update() method:
   update(input) {
     this.currentState.handleInput(input);
     this.x += this.speed;
 
-    if (this.x <= 0) this.x = 0;
-    else if (this.x >= this.gameWidth - this.width)
-      this.x = this.gameWidth - this.width;
+    // CHANGE THIS: Use worldWidth instead of gameWidth
+if (this.x <= 0) this.x = 0;
+  else if (this.x >= window.worldWidth - this.width)
+    this.x = window.worldWidth - this.width;
 
     this.y += this.vy;
     if (!this.onGround()) {

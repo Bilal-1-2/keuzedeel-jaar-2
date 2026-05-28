@@ -27,11 +27,15 @@ export default class Bullet {
     // this.x = this.vh;
     this.frameTimer += deltaTime;
     if (this.frameTimer > this.frameInterval) {
-      this.x += this.facingRight ? 7 : -7;
+      this.x += this.facingRight ? 20 : -20;
       this.frameTimer = 0;
     }
-    if (this.x >= this.gameWidth - this.width) this.exists = false;
-    if (this.x > this.gameWidth) this.exists = false;
+    if (this.x > window.worldWidth + 500) this.exists = false;
+    if (this.x < -500) this.exists = false;
+
+    // Also remove if too high or too low
+    if (this.y > this.gameHeight + 200) this.exists = false;
+    if (this.y < -200) this.exists = false;
   }
 
   draw(ctx, deltaTime) {
