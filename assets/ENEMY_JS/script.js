@@ -7,28 +7,32 @@ import { Background } from "./background.js";
 
 let grenades = [];
 let bullets = [];
-let backgroundLayers = [];
+let background;
 
 // game object shared with background layers
 const game = { speed: 3 };
 
 window.addEventListener("load", function () {
-  const laoding = document.getElementById("laoding");
-  laoding.style.display = "none";
+  const loading = document.getElementById("loading");
+  if (loading) loading.style.display = "none";
+
   const canvas = document.getElementById("canvas1");
   const ctx = canvas.getContext("2d");
   canvas.width = window.innerWidth;
-  canvas.height = this.window.innerHeight;
+  canvas.height = window.innerHeight;
+
   const spawnGrenade = (spawnX, spawnY, facingRight) => {
     grenades.push(
       new Grenade(spawnX, spawnY, facingRight, canvas.width, canvas.height),
     );
   };
+
   const spawnBullet = (spawnX, spawnY, facingRight) => {
     bullets.push(
       new Bullet(spawnX, spawnY, facingRight, canvas.width, canvas.height),
     );
   };
+
   const player = new Player(
     canvas.width,
     canvas.height,
@@ -39,11 +43,22 @@ window.addEventListener("load", function () {
   attachHealthButton(player);
 
   const input = new InputHandler();
+
+  // Initialize background
+  background = new Background(game);
+
   let lastTime = 0;
+
   function animate(timeStamp) {
     const deltaTime = timeStamp - lastTime;
     lastTime = timeStamp;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw background first (behind everything)
+    if (background) {
+      background.update();
+      background.draw(ctx);
+    }
 
     // Update all
     grenades.forEach((grenade) => grenade.update(deltaTime));
@@ -65,15 +80,11 @@ window.addEventListener("load", function () {
 
     player.update(input);
 
-    
-
-    // Update background layers if any
-    backgroundLayers.forEach((layer) => layer.update());
-
     player.draw(ctx, deltaTime);
 
     drawStatusText(ctx, input, player, deltaTime, grenades, bullets);
     requestAnimationFrame(animate);
   }
+
   animate(0);
 });
