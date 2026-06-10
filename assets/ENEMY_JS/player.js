@@ -28,7 +28,7 @@ export default class Player {
     ];
     this.currentState = this.states[0];
     // this.previousState = states.STANDING;
-    this.image = document.getElementById("soldier");
+    this.image = document.getElementById("soldier") ;
 
     // Render sprite size (full frame)
     this.width = 128;

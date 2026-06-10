@@ -300,6 +300,11 @@ export class Walking extends State {
       this.player.setState(states.JUMPING);
       return;
     }
+     else if (input.lastKey === "PRESS E" ) {
+      this.player.previousState = states.WALKING;
+      this.player.setState(states.MELEE);
+      return;
+    }
 
     // Toggle between RUNNING and WALKING
     if (!input.toggles.walkMode) {
@@ -395,6 +400,7 @@ export class Shooting extends State {
     this.player.frameX = 0;
     this.player.frameY = 7;
     this.player.maxFrames = 3;
+     this.player.playerwidth = 24;
   }
 
   handleInput(input) {
@@ -466,13 +472,12 @@ export class Melee extends State {
     this.player = player;
   }
   enter() {
-    // Slow down melee animation (lower effective FPS)
+    // Slow down melee animation only.
     this.player.frameX = 0;
     this.player.frameY = 8;
     this.player.maxFrames = 2;
-    // draw() uses player.frameInterval; set to ~10fps pacing
-    this.player.fps = 10;
-    this.player.frameInterval = (1000 / this.player.fps) * 4;
+     this.player.playerwidth = 32;
+
   }
   handleInput(input) {
     this.player.speed = 0;
@@ -498,6 +503,7 @@ export class Melee extends State {
         this.player.setState(this.player.previousState || states.STANDING);
         return;
       }
+      
     }
   }
 }
