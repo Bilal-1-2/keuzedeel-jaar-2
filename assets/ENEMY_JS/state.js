@@ -27,6 +27,7 @@ export class Standing extends State {
     this.player.frameY = 0;
     this.player.speed = 0;
     this.player.maxFrames = 6;
+    this.player.playerwidth = 22;
   }
 
   handleInput(input) {
@@ -82,6 +83,7 @@ export class Reloading extends State {
     this.player.frameY = 3;
     this.player.speed = 0;
     this.player.maxFrames = 12;
+    this.player.playerwidth = 22;
   }
 
   handleInput(input) {
@@ -114,7 +116,6 @@ export class Reloading extends State {
       }
 
       if (input.lastKey === "PRESS up" && this.player.onGround()) {
-
         this.player.setState(states.JUMPING);
       }
       // else if (
@@ -153,6 +154,7 @@ export class Running extends State {
     this.player.speed = this.player.flip
       ? -this.player.maxSpeed
       : this.player.maxSpeed;
+    this.player.playerwidth = 32;
   }
 
   handleInput(input) {
@@ -270,6 +272,7 @@ export class Walking extends State {
     this.player.speed = this.player.flip
       ? -this.player.maxSpeed * 0.5
       : this.player.maxSpeed * 0.5;
+    this.player.playerwidth = 22;
   }
 
   handleInput(input) {
@@ -463,9 +466,13 @@ export class Melee extends State {
     this.player = player;
   }
   enter() {
+    // Slow down melee animation (lower effective FPS)
     this.player.frameX = 0;
     this.player.frameY = 8;
     this.player.maxFrames = 2;
+    // draw() uses player.frameInterval; set to ~10fps pacing
+    this.player.fps = 10;
+    this.player.frameInterval = (1000 / this.player.fps) * 4;
   }
   handleInput(input) {
     this.player.speed = 0;

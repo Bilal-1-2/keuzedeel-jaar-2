@@ -36,7 +36,7 @@ export default class Player {
 
     // Real hitbox / position box (actual character size)
     this.playerheight = 68;
-    this.playerwidth = 32;
+    this.playerwidth = 22;
 
     // Start so the hitbox is centered horizontally, and sits slightly above the bottom.
     // (Note: script.js will override x/y, but this keeps Player defaults correct.)
@@ -65,7 +65,7 @@ export default class Player {
     this.grenades = 5;
 
     // Base animation fps
-    this.fps = 20;
+    this.fps = 40;
     // Shooting animation fps target (60)
     this.shootingFps = 60;
 
@@ -88,8 +88,8 @@ export default class Player {
     // Place hitbox on the bottom of the sprite (not centered vertically)
     context.strokeRect(
       this.flip
-        ? this.x + (this.width - this.playerwidth + 20) / 2
-        : this.x + (this.width - this.playerwidth - 20) / 2,
+        ? this.x + (this.width - this.playerwidth + 20) / 2 
+        : this.x + (this.width - this.playerwidth - 20) / 2 ,
       // Lift the CHARACTER (position box) + hitbox upward by paddingBottom
       this.y + (this.height - this.playerheight - (this.paddingBottom || 0)),
       this.playerwidth,
