@@ -40,7 +40,7 @@ export default class Player {
 
     // Start so the hitbox is centered horizontally, and sits slightly above the bottom.
     // (Note: script.js will override x/y, but this keeps Player defaults correct.)
-    this.x = this.playerwidth / 2;
+    this.x = this.playerwidth / 2 ;
 
     // How far above the ground the player should rest (in px)
     this.floorOffset = 12;

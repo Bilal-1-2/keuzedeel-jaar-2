@@ -63,7 +63,7 @@ window.addEventListener("load", function () {
 
   // Start player: hitbox centered, and sits on the bottom of the screen
   // (player.nx/y are used for both sprite drawing and hitbox debug)
-  player.x = (player.width - player.playerwidth) / 2;
+  player.x = (player.width - player.playerwidth) / 2 ;
   player.y = canvas.height - player.playerheight - player.floorOffset;
 
   attachHealthButton(player);

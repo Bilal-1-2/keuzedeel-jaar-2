@@ -39,10 +39,10 @@ class EnemyIdle extends EnemyState {
     const dx = target.x - this.enemy.x;
 
     // If player is within 500px, start walking toward him.
-    if (Math.abs(dx) <= 500) {
-      this.enemy.direction = dx >= 0 ? 1 : -1;
-      this.enemy.setState(enemyStates.WALK);
-    }
+    // if (Math.abs(dx) <= 500) {
+    //   this.enemy.direction = dx >= 0 ? 1 : -1;
+    //   this.enemy.setState(enemyStates.WALK);
+    // }
   }
 }
 
@@ -58,6 +58,12 @@ class EnemyWalking extends EnemyState {
     this.enemy.frameY = 1;
     this.enemy.maxFrame = 7;
   }
+
+  handleInput() {
+    const target = this.enemy.targetPlayer;
+
+    if (!target) return;
+  }
 }
 
 class EnemyTurn extends EnemyState {
@@ -70,6 +76,10 @@ class EnemyTurn extends EnemyState {
     this.enemy.frameX = 0;
     this.enemy.frameY = 2;
     this.enemy.maxFrame = 10;
+  }
+  handleInput() {
+    const target = this.enemy.targetPlayer;
+    if (!target) return;
   }
 }
 
@@ -85,6 +95,13 @@ class EnemyAnticipation extends EnemyState {
     this.enemy.maxFrame = 7;
     // TODO: set correct maxFrame/fps/row for ANTICIPATION.
   }
+  handleInput() {
+    const target = this.enemy.targetPlayer;
+    if (this.enemy.frameX >= this.enemy.maxFrame) {
+      this.enemy.setState(enemyStates.CHARGE);
+    }
+    if (!target) return;
+  }
 }
 
 class EnemyCharge extends EnemyState {
@@ -97,7 +114,14 @@ class EnemyCharge extends EnemyState {
     this.enemy.frameX = 0;
     this.enemy.frameY = 4;
     this.enemy.maxFrame = 6;
-    // TODO: increase speed for CHARGE if needed.
+   
+  }
+  handleInput() {
+    const target = this.enemy.targetPlayer;
+     if (this.enemy.x === this.targetPlayer.x) {
+      this.setState(enemyStates.IMPACT);
+    }
+    if (!target) return;
   }
 }
 
@@ -113,6 +137,10 @@ class EnemyImpact extends EnemyState {
     this.enemy.maxFrame = 5;
     // TODO: set correct maxFrame/fps/row for IMPACT.
   }
+  handleInput() {
+    const target = this.enemy.targetPlayer;
+    if (!target) return;
+  }
 }
 
 class EnemyGetHit extends EnemyState {
@@ -126,6 +154,10 @@ class EnemyGetHit extends EnemyState {
     this.enemy.frameY = 6;
     this.enemy.maxFrame = 5;
     // TODO: set correct maxFrame/fps/row for GET_HIT.
+  }
+  handleInput() {
+    const target = this.enemy.targetPlayer;
+    if (!target) return;
   }
 }
 
@@ -148,6 +180,10 @@ class EnemyDead extends EnemyState {
     // Dead is final.
     this.enemy.speedX = 0;
   }
+  handleInput() {
+    const target = this.enemy.targetPlayer;
+    if (!target) return;
+  }
 }
 
 export class Enemy {
@@ -157,7 +193,7 @@ export class Enemy {
 
     // sprite animation
     // Enemyd animation fps (independent from the player)
-    this.fps = 10;
+    this.fps = 5;
     this.frameTimer = 0;
     this.frameInterval = 1000 / this.fps;
 
@@ -189,6 +225,9 @@ export class Enemy {
     this.states = [];
     this.currentState = null;
     this.previousState = null;
+    this.targetPlayer = null;
+    this.aggroRangeFront = 300;
+    this.aggroRangeBack = 100;
   }
 
   setState(stateEnum) {
@@ -197,11 +236,38 @@ export class Enemy {
     this.currentState.enter();
   }
 
+  checkPlayerDistance() {
+    if (!this.targetPlayer || this.isDead) return;
+
+    const dx = this.targetPlayer.x - this.x;
+
+    // Is the player in front of, or behind, the direction the enemy is facing?
+    // this.direction is 1 (facing right) or -1 (facing left)
+    const isInFront =
+      (dx > 0 && this.direction === 1) || (dx < 0 && this.direction === -1);
+
+    const distance = Math.abs(dx);
+    const range = isInFront ? this.aggroRangeFront : this.aggroRangeBack;
+
+    if (distance <= range) {
+      // Player detected - face them and walk over
+      this.direction = dx > 0 ? 1 : -1;
+      if (
+        this.currentState?.state == enemyStates.IDLE
+      ) {
+        this.setState(enemyStates.ANTICIPATION);
+      }
+    } else if (this.currentState?.state !== enemyStates.IDLE) {
+      this.setState(enemyStates.IDLE);
+    }
+  }
+
   update(deltaTime) {
     if (!this.currentState) return;
 
     // Let current state decide transitions (distance checks etc.).
     // Some states may use targetPlayer/x in their logic.
+    this.checkPlayerDistance();
     this.currentState.handleInput();
 
     this.x += this.speedX;
@@ -229,17 +295,37 @@ export class Enemy {
     if (!ctx || !this.image) return;
 
     // Basic sprite sheet draw (assumes row-based frames)
-    ctx.drawImage(
-      this.image,
-      this.width * this.frameX,
-      this.height * this.frameY,
-      this.width,
-      this.height,
-      this.x,
-      this.y,
-      this.width,
-      this.height,
-    );
+    // Mirror like Player.js does when facing left.
+    const shouldFlip = this.direction < 0;
+
+    if (shouldFlip) {
+      ctx.save();
+      ctx.scale(-1, 1);
+      ctx.drawImage(
+        this.image,
+        this.width * this.frameX,
+        this.height * this.frameY,
+        this.width,
+        this.height,
+        -this.x - this.width,
+        this.y,
+        this.width,
+        this.height,
+      );
+      ctx.restore();
+    } else {
+      ctx.drawImage(
+        this.image,
+        this.width * this.frameX,
+        this.height * this.frameY,
+        this.width,
+        this.height,
+        this.x,
+        this.y,
+        this.width,
+        this.height,
+      );
+    }
   }
 }
 
