@@ -44,7 +44,7 @@ class EnemyWalking extends EnemyState {
     this.enemy.frameX = 0;
     this.enemy.frameY = 1;
     this.enemy.maxFrame = 7;
-    // TODO: set correct frame row/length for the sprite sheet.
+    
   }
 }
 
@@ -127,8 +127,8 @@ class EnemyDead extends EnemyState {
     this.enemy.isDead = true;
     this.enemy.isAlive = false;
     // If you have a dedicated death row/frame, update these.
-    this.enemy.frameX = this.enemy.deathFrameX ?? 0;
-    this.enemy.frameY = this.enemy.deathFrameY ?? 0;
+    this.enemy.frameX =  0;
+    this.enemy.frameY = 7;
     this.enemy.maxFrame = 15;
   }
 
@@ -144,7 +144,8 @@ export class Enemy {
     this.frameY = 0;
 
     // sprite animation
-    this.fps = 20;
+    // Enemyd animation fps (independent from the player)
+    this.fps = 10;
     this.frameTimer = 0;
     this.frameInterval = 1000 / this.fps;
 
@@ -201,7 +202,31 @@ export class Enemy {
     }
   }
 
-  draw() {}
+  draw(ctx, deltaTime) {
+    // Advance animation timer
+    if (this.frameTimer > this.frameInterval) {
+      if (this.frameX < this.maxFrame) this.frameX++;
+      else this.frameX = 0;
+      this.frameTimer = 0;
+    } else {
+      this.frameTimer += deltaTime;
+    }
+
+    if (!ctx || !this.image) return;
+
+    // Basic sprite sheet draw (assumes row-based frames)
+    ctx.drawImage(
+      this.image,
+      this.width * this.frameX,
+      this.height * this.frameY,
+      this.width,
+      this.height,
+      this.x,
+      this.y,
+      this.width,
+      this.height,
+    );
+  }
 }
 
 export class icebull extends Enemy {
@@ -209,7 +234,7 @@ export class icebull extends Enemy {
     super();
 
     // Render sprite size (full frame)
-    this.width = 162;
+    this.width = 162.4;
     this.height = 106;
 
     this.x = 1000;
@@ -229,7 +254,7 @@ export class icebull extends Enemy {
     // set up enemy states
     this.states = [
       new EnemyIdle(this), // IDLE
-      new EnemyRunning(this), // WALK
+      new EnemyWalking(this), // WALK
       new EnemyTurn(this), // TURN
       new EnemyAnticipation(this), // ANTICIPATION
       new EnemyCharge(this), // CHARGE

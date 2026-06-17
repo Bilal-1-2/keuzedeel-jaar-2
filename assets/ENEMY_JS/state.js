@@ -28,6 +28,7 @@ export class Standing extends State {
     this.player.speed = 0;
     this.player.maxFrames = 6;
     this.player.playerwidth = 22;
+    this.player.playerheight = 67;
   }
 
   handleInput(input) {
@@ -84,6 +85,7 @@ export class Reloading extends State {
     this.player.speed = 0;
     this.player.maxFrames = 12;
     this.player.playerwidth = 22;
+    this.player.playerheight = 67;
   }
 
   handleInput(input) {
@@ -155,6 +157,7 @@ export class Running extends State {
       ? -this.player.maxSpeed
       : this.player.maxSpeed;
     this.player.playerwidth = 32;
+    this.player.playerheight = 60;
   }
 
   handleInput(input) {
@@ -216,7 +219,7 @@ export class Jumping extends State {
 
   enter() {
     if (this.player.onGround()) {
-      this.player.vy = -10;
+      this.player.vy = -10.3;
     }
   }
 
@@ -273,6 +276,7 @@ export class Walking extends State {
       ? -this.player.maxSpeed * 0.5
       : this.player.maxSpeed * 0.5;
     this.player.playerwidth = 22;
+    this.player.playerheight = 67;
   }
 
   handleInput(input) {
@@ -299,8 +303,7 @@ export class Walking extends State {
       this.player.previousState = states.WALKING;
       this.player.setState(states.JUMPING);
       return;
-    }
-     else if (input.lastKey === "PRESS E" ) {
+    } else if (input.lastKey === "PRESS E") {
       this.player.previousState = states.WALKING;
       this.player.setState(states.MELEE);
       return;
@@ -400,7 +403,8 @@ export class Shooting extends State {
     this.player.frameX = 0;
     this.player.frameY = 7;
     this.player.maxFrames = 3;
-     this.player.playerwidth = 24;
+    this.player.playerwidth = 24;
+    this.player.playerheight = 67;
   }
 
   handleInput(input) {
@@ -476,8 +480,8 @@ export class Melee extends State {
     this.player.frameX = 0;
     this.player.frameY = 8;
     this.player.maxFrames = 2;
-     this.player.playerwidth = 32;
-
+    this.player.playerwidth = 32;
+    this.player.playerheight = 67;
   }
   handleInput(input) {
     this.player.speed = 0;
@@ -503,7 +507,6 @@ export class Melee extends State {
         this.player.setState(this.player.previousState || states.STANDING);
         return;
       }
-      
     }
   }
 }
