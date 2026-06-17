@@ -31,6 +31,19 @@ class EnemyIdle extends EnemyState {
     this.enemy.frameY = 0;
     this.enemy.maxFrame = 7;
   }
+
+  handleInput() {
+    const target = this.enemy.targetPlayer;
+    if (!target) return;
+
+    const dx = target.x - this.enemy.x;
+
+    // If player is within 500px, start walking toward him.
+    if (Math.abs(dx) <= 500) {
+      this.enemy.direction = dx >= 0 ? 1 : -1;
+      this.enemy.setState(enemyStates.WALK);
+    }
+  }
 }
 
 class EnemyWalking extends EnemyState {
@@ -44,7 +57,6 @@ class EnemyWalking extends EnemyState {
     this.enemy.frameX = 0;
     this.enemy.frameY = 1;
     this.enemy.maxFrame = 7;
-    
   }
 }
 
@@ -127,7 +139,7 @@ class EnemyDead extends EnemyState {
     this.enemy.isDead = true;
     this.enemy.isAlive = false;
     // If you have a dedicated death row/frame, update these.
-    this.enemy.frameX =  0;
+    this.enemy.frameX = 0;
     this.enemy.frameY = 7;
     this.enemy.maxFrame = 15;
   }
@@ -188,6 +200,8 @@ export class Enemy {
   update(deltaTime) {
     if (!this.currentState) return;
 
+    // Let current state decide transitions (distance checks etc.).
+    // Some states may use targetPlayer/x in their logic.
     this.currentState.handleInput();
 
     this.x += this.speedX;

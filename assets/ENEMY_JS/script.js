@@ -5,7 +5,6 @@ import InputHandler from "./input.js";
 import { drawStatusText, attachHealthButton } from "./utils.js";
 import { Background } from "./background.js";
 import { Enemy, icebull } from "./enemy.js";
-import { spawnIcebullForDebug } from "./enemy-debug.js";
 
 let grenades = [];
 let bullets = [];
@@ -74,15 +73,13 @@ window.addEventListener("load", function () {
   // Spawn enemies
   const enemies = [];
 
-  // Spawn enemy in a forced state for debugging (4 = CHARGE)
-  const enemy = spawnIcebullForDebug({
-    player,
-    canvas,
-    ctx,
-    gameWidth: window.worldWidth,
-    gameHeight: canvas.height,
-    debugState: 0,
-  });
+  // Spawn enemy
+  const enemy = new icebull();
+  enemy.x = 900;
+  enemy.y = canvas.height - enemy.height - (player.floorOffset || 12);
+  enemy.targetPlayer = player;
+  enemy.gameWidth = window.worldWidth;
+  enemy.gameHeight = canvas.height;
   enemies.push(enemy);
 
   // Initialize background
@@ -153,8 +150,10 @@ window.addEventListener("load", function () {
     player.draw(ctx, deltaTime);
     ctx.restore();
 
-    // DRAW ENEMIES
+    // UPDATE AND DRAW ENEMIES
     enemies.forEach((enemy) => {
+      enemy.update(deltaTime);
+
       ctx.save();
       ctx.translate(-cameraX, -cameraY);
       enemy.draw(ctx, deltaTime);
