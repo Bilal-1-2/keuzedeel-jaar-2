@@ -49,7 +49,7 @@ class EnemyWalking extends EnemyState {
     this.enemy.maxFrame = 7;
     // pick a random patrol duration before turning around
     this.enemy._walkTimer = 0;
-    this.enemy._walkDuration = 2000 + Math.random() * 1250; // 2-4 seconds
+    this.enemy._walkDuration = 2000 + Math.random() * 1250;
   }
 
   handleInput(deltaTime) {
@@ -135,7 +135,7 @@ class EnemyCharge extends EnemyState {
   }
 
   enter() {
-    this.enemy.speedX = this.enemy.direction * this.enemy.baseSpeedX * 3;
+    this.enemy.speedX = this.enemy.direction * this.enemy.baseSpeedX * 2;
     this.enemy.frameX = 0;
     this.enemy.frameY = 4;
     this.enemy.maxFrame = 6;
@@ -149,14 +149,16 @@ class EnemyCharge extends EnemyState {
 
     // Hit check: real hitbox overlap, not raw x distance.
     const enemyBox = this.enemy.getHitbox();
-    const playerBox = target.getHitbox();
+    const playerBox = target.getHitbox?.();
 
-    if (this.enemy.hitboxesOverlap(enemyBox, playerBox)) {
+    if (playerBox && this.enemy.hitboxesOverlap(enemyBox, playerBox)) {
       this.enemy.setState(enemyStates.IMPACT);
       return;
     }
 
     // Player slipped behind us mid-charge - turn to keep following them.
+    // This intentionally ignores aggroRangeBack: once committed to a
+    // charge, the enemy stays locked on rather than "losing" the player.
     const desiredDirection = dx > 0 ? 1 : -1;
     if (desiredDirection !== this.enemy.direction) {
       this.enemy.pendingDirection = desiredDirection;
@@ -178,10 +180,10 @@ class EnemyImpact extends EnemyState {
     this.enemy.maxFrame = 5;
 
     // Apply damage once when IMPACT starts.
-    // Use the current target player reference.
     const target = this.enemy.targetPlayer;
     if (target && typeof target.health === "number") {
       target.health -= 25;
+      if (target.health < 0) target.health = 0;
     }
   }
 
@@ -193,19 +195,11 @@ class EnemyImpact extends EnemyState {
     if (this.enemy.frameX >= this.enemy.maxFrame) {
       if (this.enemy._impactToIdleStartMs === undefined) {
         this.enemy._impactToIdleStartMs = performance.now();
-
-        // If enemy health dropped (meaning it took damage), play GET_HIT.
-        // Otherwise, return to IDLE.
-        if (this.enemy.health > 0 && this.enemy.health < 3) {
-          this.enemy.setState(enemyStates.GET_HIT);
-        } else {
-          this.enemy.setState(enemyStates.IDLE);
-        }
+        this.enemy.setState(enemyStates.IDLE);
       } else {
         const elapsedMs = performance.now() - this.enemy._impactToIdleStartMs;
         if (elapsedMs >= 2000) {
           this.enemy._impactToIdleStartMs = undefined;
-          // Ensure we remain in idle state.
           this.enemy.setState(enemyStates.IDLE);
         }
       }
@@ -223,6 +217,7 @@ class EnemyGetHit extends EnemyState {
     this.enemy.frameX = 0;
     this.enemy.frameY = 6;
     this.enemy.maxFrame = 5;
+    // TODO: set correct maxFrame/fps/row for GET_HIT.
   }
 
   handleInput() {
@@ -236,22 +231,29 @@ class EnemyGetHit extends EnemyState {
 
 class EnemyDead extends EnemyState {
   constructor(enemy) {
-    super(enemyStates.DEAD, enemy);
+    super(enemyStates.DEATH, enemy);
   }
 
   enter() {
     this.enemy.speedX = 0;
     this.enemy.isDead = true;
     this.enemy.isAlive = false;
-    // If you have a dedicated death row/frame, update these.
     this.enemy.frameX = 0;
     this.enemy.frameY = 7;
     this.enemy.maxFrame = 15;
+    this.enemy._deathAnimDone = false;
   }
 
   handleInput() {
-    // Dead is final.
+    // Dead is final - no movement, no transitions out.
     this.enemy.speedX = 0;
+
+    // Clamp on the last frame instead of looping back to 0,
+    // so the death pose holds once the animation finishes.
+    if (this.enemy.frameX >= this.enemy.maxFrame) {
+      this.enemy.frameX = this.enemy.maxFrame;
+      this.enemy._deathAnimDone = true;
+    }
   }
 }
 
@@ -274,16 +276,16 @@ export class Enemy {
     // hitbox / rendering defaults (override in subclasses)
     this.width = 0;
     this.height = 0;
+  
 
     // animation frames
     this.maxFrame = 0;
 
     // stats
-    this.health = 400;
+    this.health = 1;
+    this.maxHealth = 1;
     this.isDead = false;
     this.isAlive = true;
-    this.enemywidth = 100;
-    this.enemyheight = 100;
 
     this.direction = 1; // 1 => right, -1 => left
     this.baseSpeedX = 0;
@@ -308,9 +310,17 @@ export class Enemy {
     // - if player is behind: smaller range (aggroRangeBack px)
     this.aggroRangeFront = 600;
     this.aggroRangeBack = 200;
+
+    this._deathAnimDone = false;
   }
 
   setState(stateEnum) {
+    if (!this.states[stateEnum]) {
+      console.warn(
+        `[Enemy] setState called with invalid stateEnum: ${stateEnum}`,
+      );
+      return;
+    }
     this.previousState = this.currentState?.state;
     this.currentState = this.states[stateEnum];
     this.currentState.enter();
@@ -320,6 +330,21 @@ export class Enemy {
   revertState() {
     if (this.previousState === null || this.previousState === undefined) return;
     this.setState(this.previousState);
+  }
+
+  // Shared damage entry point - any subclass gets this for free.
+  // Override in a subclass only if you need different death/hit behavior.
+  takeDamage(amount = 1) {
+    if (this.isDead) return;
+    this.health -= amount;
+    if (this.health < 0) this.health = 0;
+
+    if (this.health <= 0) {
+      this.setState(enemyStates.DEATH);
+    } else {
+      this.resumeState = this.currentState?.state ?? enemyStates.IDLE;
+      this.setState(enemyStates.GET_HIT);
+    }
   }
 
   checkPlayerDistance() {
@@ -370,6 +395,7 @@ export class Enemy {
       bottom: this.y + this.enemyheight,
     };
   }
+
   hitboxesOverlap(boxA, boxB) {
     return (
       boxA.left < boxB.right &&
@@ -389,26 +415,60 @@ export class Enemy {
 
     this.x += this.speedX;
 
-    // simple frame advance if maxFrame is set
+    // simple frame advance if maxFrame is set.
+    // DEATH never wraps back to 0 - EnemyDead.handleInput() clamps it.
     if (this.frameTimer > this.frameInterval) {
-      if (this.frameX < this.maxFrame) this.frameX++;
-      else this.frameX = 0;
+      if (this.frameX < this.maxFrame) {
+        this.frameX++;
+      } else if (this.currentState?.state !== enemyStates.DEATH) {
+        this.frameX = 0;
+      }
       this.frameTimer = 0;
     } else {
       this.frameTimer += deltaTime;
     }
   }
 
+  drawHealthBar(ctx) {
+    if (this.maxHealth <= 0) return;
+
+    const barWidth = Math.max(this.width, 60);
+    const barHeight = 8;
+    const x = this.x + (this.width - barWidth) / 2;
+    const y = this.y - 16;
+
+    const pct = Math.max(0, this.health / this.maxHealth);
+
+    // background
+    ctx.fillStyle = "rgba(0,0,0,0.6)";
+    ctx.fillRect(x, y, barWidth, barHeight);
+
+    // fill
+    ctx.fillStyle = pct > 0.5 ? "#4caf50" : pct > 0.2 ? "#ffb300" : "#e53935";
+    ctx.fillRect(x, y, barWidth * pct, barHeight);
+
+    // border
+    ctx.strokeStyle = "black";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x, y, barWidth, barHeight);
+  }
+
   draw(ctx, deltaTime) {
     // Advance animation timer
     if (this.frameTimer > this.frameInterval) {
-      if (this.frameX < this.maxFrame) this.frameX++;
-      else this.frameX = 0;
+      if (this.frameX < this.maxFrame) {
+        this.frameX++;
+      } else if (this.currentState?.state !== enemyStates.DEATH) {
+        this.frameX = 0;
+      }
       this.frameTimer = 0;
     } else {
       this.frameTimer += deltaTime;
     }
-    // in Enemy.draw(), before the sprite drawImage calls
+
+    if (!ctx || !this.image) return;
+
+    // Debug hitbox
     const box = this.getHitbox();
     ctx.strokeStyle = "lime";
     ctx.strokeRect(
@@ -417,7 +477,11 @@ export class Enemy {
       box.right - box.left,
       box.bottom - box.top,
     );
-    if (!ctx || !this.image) return;
+
+    // Health bar (hide once fully dead and animation finished, optional)
+    if (!this.isDead || !this._deathAnimDone) {
+      this.drawHealthBar(ctx);
+    }
 
     // Basic sprite sheet draw (assumes row-based frames)
     // Mirror like Player.js does when facing left.
@@ -462,6 +526,11 @@ export class icebull extends Enemy {
     this.width = 162.4;
     this.height = 106;
 
+    // Hitbox size (used by getHitbox/overlap). If these are left 0/undefined,
+    // collisions will never register.
+    this.enemywidth = 100;
+    this.enemyheight = 100;
+
     this.x = 1000;
     this.y = 0;
 
@@ -469,12 +538,13 @@ export class icebull extends Enemy {
 
     // movement tuning
     this.direction = -1;
-    this.baseSpeedX = 2;
+    this.baseSpeedX = 4;
 
     this.image = document.getElementById("icebull");
 
     // enemy stats
-    this.health = 20;
+    this.health = 100;
+    this.maxHealth = 100;
 
     // set up enemy states
     this.states = [
@@ -491,15 +561,6 @@ export class icebull extends Enemy {
     this.setState(enemyStates.IDLE);
   }
 
-  // optional: external damage hook
-  takeDamage(amount = 1) {
-    if (this.isDead) return;
-    this.health -= amount;
-    if (this.health <= 0) {
-      this.setState(enemyStates.DEAD);
-    } else {
-      this.resumeState = this.currentState?.state ?? enemyStates.IDLE;
-      this.setState(enemyStates.GET_HIT);
-    }
-  }
+  // takeDamage() is inherited from Enemy - no need to redefine it here
+  // unless icebull needs special death/hit behavior.
 }

@@ -60,6 +60,7 @@ export default class Player {
     // player stats
     this.magazine = 30;
     this.health = 100;
+    this.maxHealth = 100;
     this.isDead = false;
     this.isAlive = true;
     this.grenades = 5;
@@ -80,6 +81,40 @@ export default class Player {
     this.spawnBullet = spawnBullet || null;
     this.hasThrown = false; // Prevent spam-spawn per throw
     this.hasShot = false; // Prevent spam-spawn per throw
+  }
+
+  drawHealthBar(context) {
+    if (this.maxHealth <= 0) return;
+
+    const barWidth = 200;
+    const barHeight = 18;
+    const x = 20;
+    const y = 20;
+
+    const pct = Math.max(0, this.health / this.maxHealth);
+
+    // background
+    context.fillStyle = "rgba(0,0,0,0.6)";
+    context.fillRect(x, y, barWidth, barHeight);
+
+    // fill
+    context.fillStyle =
+      pct > 0.5 ? "#4caf50" : pct > 0.2 ? "#ffb300" : "#e53935";
+    context.fillRect(x, y, barWidth * pct, barHeight);
+
+    // border
+    context.strokeStyle = "black";
+    context.lineWidth = 2;
+    context.strokeRect(x, y, barWidth, barHeight);
+
+    // label
+    context.fillStyle = "white";
+    context.font = "12px Arial";
+    context.fillText(
+      `${Math.max(0, Math.round(this.health))} / ${this.maxHealth}`,
+      x + 6,
+      y + barHeight - 5,
+    );
   }
 
   draw(context, deltaTime) {
