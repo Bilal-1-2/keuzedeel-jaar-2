@@ -451,6 +451,7 @@ export class Shooting extends State {
         this.player.setState(states.RELOADING);
       }
     }
+    
 
     // PRESS events
     if (input.lastKey === "PRESS up" && this.player.onGround()) {
@@ -507,6 +508,70 @@ export class Melee extends State {
         this.player.setState(this.player.previousState || states.STANDING);
         return;
       }
+    }
+  }
+}
+
+export class Gethit extends State {
+  constructor(player) {
+    super("GEthit");
+    this.player = player;
+  }
+
+  enter() {
+    this.player.previousState = states.DEAD;
+    this.player.frameX = 0;
+    this.player.frameY = 9;
+    this.player.maxFrames = 2;
+  }
+
+  handleInput(input) {
+    // PRESS events - check these FIRST
+    if (this.player.health <= 0 && this.player.previousState !== states.DEAD) {
+      this.player.setState(states.DEAD);
+      console.log("Dead anim: 6");
+    }
+
+    if (input.lastKey === "PRESS reload" && this.player.magazine < 30) {
+      this.player.setState(states.RELOADING);
+      return;
+    } else if (input.lastKey === "PRESS G" && this.player.grenades > 0) {
+      this.player.speed = 0;
+      this.player.frameX = 0;
+      this.player.setState(states.THROWINGGRENADE);
+      return; // Stop here, don't process movement
+    } else if (input.lastKey === "PRESS CLICK") {
+      this.player.speed = 0;
+      this.player.previousState = states.WALKING;
+      this.player.setState(states.SHOOTING);
+      return; // Stop here, don't process movement
+    } else if (input.lastKey === "PRESS up" && this.player.onGround()) {
+      this.player.previousState = states.WALKING;
+      this.player.setState(states.JUMPING);
+      return;
+    } else if (input.lastKey === "PRESS E") {
+      this.player.previousState = states.WALKING;
+      this.player.setState(states.MELEE);
+      return;
+    }
+    // Toggle between RUNNING and WALKING
+    if (!input.toggles.walkMode) {
+      this.player.setState(states.RUNNING);
+      return;
+    }
+    // HELD logic (only if no PRESS action was taken)
+    if (input.keys.right) {
+      this.player.flip = false;
+      this.player.speed = this.player.maxSpeed * 0.5;
+    } else if (input.keys.left) {
+      this.player.flip = true;
+      this.player.speed = -this.player.maxSpeed * 0.5;
+    } else if (input.keys.down) {
+      this.player.setState(states.RELOADING);
+      return;
+    } else {
+      this.player.setState(states.STANDING);
+      return;
     }
   }
 }

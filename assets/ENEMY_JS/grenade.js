@@ -18,6 +18,10 @@ export default class Grenade {
     this.frameInterval = 1000 / this.fps;
     this.gravity = 0.4; // acceleration downward
     this.lifetime = 3000; // ms before self-destruct
+
+    // Visual/logic duration controls for debugging collision.
+    // The explosion currently lasts 1 frame; extend how long it stays visible/active.
+    this.explosionDurationMs = 1000; // normal explosion duration (1s)
     this.exists = true;
     this.flip = !facingRight;
     this.startTime = Date.now();
@@ -26,16 +30,19 @@ export default class Grenade {
     // for one frame while exploded so the blast can be drawn/checked,
     // then exists is set false right after).
     this.hasExploded = false;
-    this.blastRadius = 80; // px - how far the explosion reaches
+    // Smaller circle radius for easier collision debugging
+    this.blastRadius = 60; // px
     this.damage = 50; // damage dealt to anything caught in the blast
   }
 
   update(deltaTime) {
     if (!this.exists) return;
     if (this.hasExploded) {
-      // Already exploded last frame - remove it now that the blast
-      // has had one frame to be checked/drawn.
-      this.exists = false;
+      // Keep the explosion visible/active for a fixed duration.
+      const elapsed = Date.now() - this.explosionStartMs;
+      if (elapsed >= this.explosionDurationMs) {
+        this.exists = false;
+      }
       return;
     }
 
@@ -81,13 +88,15 @@ export default class Grenade {
   explode() {
     if (this.hasExploded) return;
     this.hasExploded = true;
+    this.explosionStartMs = Date.now();
   }
 
   // Center point of the explosion, used for radius-based damage checks.
   getBlastCenter() {
     return {
       x: this.x + this.width / 2,
-      y: this.y + this.height / 2,
+      // lower the blast center so the collision feels lower
+      y: this.y + this.height * 1,
     };
   }
 
@@ -136,17 +145,17 @@ export default class Grenade {
   draw(ctx, deltaTime) {
     if (!this.exists || !this.image) return;
 
-    if (this.hasExploded) {
-      // Simple blast visual - swap for a sprite/animation if you have one.
-      const center = this.getBlastCenter();
-      ctx.save();
-      ctx.fillStyle = "rgba(255, 140, 0, 0.5)";
-      ctx.beginPath();
-      ctx.arc(center.x, center.y, this.blastRadius, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-      return;
-    }
+    // if (this.hasExploded) {
+    //   // Simple blast visual - swap for a sprite/animation .
+    //   const center = this.getBlastCenter();
+    //   ctx.save();
+    //   ctx.fillStyle = "rgba(255, 140, 0, 0.5)";
+    //   ctx.beginPath();
+    //   ctx.arc(center.x, center.y, this.blastRadius, 0, Math.PI * 2);
+    //   ctx.fill();
+    //   ctx.restore();
+    //   return;
+    // }
 
     const sx = this.frameX * this.width;
     const sy = this.frameY * this.height;

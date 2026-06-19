@@ -238,21 +238,34 @@ class EnemyDead extends EnemyState {
     this.enemy.speedX = 0;
     this.enemy.isDead = true;
     this.enemy.isAlive = false;
+
     this.enemy.frameX = 0;
     this.enemy.frameY = 7;
     this.enemy.maxFrame = 15;
+
     this.enemy._deathAnimDone = false;
+    // after animation is finished, vanish after a short delay
+    this.enemy._deathStartMs = performance.now();
+    this.enemy._deathVanishDelayMs = 4000; // requested: vanish 4s after enemy dies
   }
 
   handleInput() {
     // Dead is final - no movement, no transitions out.
     this.enemy.speedX = 0;
 
-    // Clamp on the last frame instead of looping back to 0,
-    // so the death pose holds once the animation finishes.
+    // clamp on last frame instead of looping
     if (this.enemy.frameX >= this.enemy.maxFrame) {
       this.enemy.frameX = this.enemy.maxFrame;
       this.enemy._deathAnimDone = true;
+    }
+
+    // vanish after delay
+    if (
+      this.enemy._deathAnimDone &&
+      performance.now() - this.enemy._deathStartMs >=
+        this.enemy._deathVanishDelayMs
+    ) {
+      this.enemy.isVanished = true;
     }
   }
 }
@@ -276,7 +289,6 @@ export class Enemy {
     // hitbox / rendering defaults (override in subclasses)
     this.width = 0;
     this.height = 0;
-  
 
     // animation frames
     this.maxFrame = 0;
@@ -454,6 +466,8 @@ export class Enemy {
   }
 
   draw(ctx, deltaTime) {
+    if (this.isVanished) return;
+
     // Advance animation timer
     if (this.frameTimer > this.frameInterval) {
       if (this.frameX < this.maxFrame) {

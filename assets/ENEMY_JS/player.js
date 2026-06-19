@@ -215,6 +215,12 @@ export default class Player {
       console.log("Dead anim 4");
       this.setState(states.DEAD);
     }
+
+    // get-hit animation trigger (set externally by damage code)
+    if (this._pendingGetHitAnim && this.health > 0) {
+      this._pendingGetHitAnim = false;
+      this.setState(states.GETHIT);
+    }
   }
   getHitbox() {
     const left = this.flip
