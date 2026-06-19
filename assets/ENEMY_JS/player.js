@@ -138,9 +138,9 @@ export default class Player {
         ? (1000 / this.shootingFps) * 4
         : this.frameInterval;
 
-    // For GETHIT state, use a faster interval
+    // For GETHIT state, use a slower interval (slower animation than normal)
     const effectiveInterval =
-      this.currentState.state === "GETHIT" ? (1000 / 30) * 2 : interval;
+      this.currentState.state === "GETHIT" ? (1000 / 15) * 3 : interval;
 
     if (this.frameTimer > effectiveInterval) {
       if (this.frameX < this.maxFrames) {
