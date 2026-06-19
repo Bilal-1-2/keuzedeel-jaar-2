@@ -76,7 +76,7 @@ window.addEventListener("load", function () {
 
   // Spawn enemy
   const enemy = new icebull();
-  enemy.x = 900;
+  enemy.x = 3900;
   enemy.y = canvas.height - enemy.height - (player.floorOffset || 12);
   enemy.targetPlayer = player;
   enemy.gameWidth = window.worldWidth;
