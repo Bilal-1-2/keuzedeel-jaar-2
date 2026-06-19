@@ -8,6 +8,7 @@ export const states = {
   SHOOTING: 6,
   MELEE: 7,
   DEAD: 8,
+  GETHIT: 9,
 };
 
 class State {
@@ -451,7 +452,7 @@ export class Shooting extends State {
         this.player.setState(states.RELOADING);
       }
     }
-    
+
 
     // PRESS events
     if (input.lastKey === "PRESS up" && this.player.onGround()) {
@@ -514,7 +515,7 @@ export class Melee extends State {
 
 export class Gethit extends State {
   constructor(player) {
-    super("GEthit");
+    super("GETHIT");
     this.player = player;
   }
 

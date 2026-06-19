@@ -21,7 +21,7 @@ export default class Grenade {
 
     // Visual/logic duration controls for debugging collision.
     // The explosion currently lasts 1 frame; extend how long it stays visible/active.
-    this.explosionDurationMs = 1000; // normal explosion duration (1s)
+    this.explosionDurationMs = 0; // normal explosion duration (1s)
     this.exists = true;
     this.flip = !facingRight;
     this.startTime = Date.now();
@@ -76,7 +76,7 @@ export default class Grenade {
     this.frameTimer += deltaTime;
     if (
       (this.frameTimer > this.frameInterval && this.GrenadeonGround()) ||
-      age >= 2000
+      age >= 1830
     ) {
       this.frameX = this.frameX + 1;
       this.frameTimer = 0;

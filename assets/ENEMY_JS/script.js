@@ -3,6 +3,7 @@ import Grenade from "./grenade.js";
 import Bullet from "./bullets.js";
 import InputHandler from "./input.js";
 import { drawStatusText, attachHealthButton } from "./utils.js";
+import { states } from "./state.js";
 import { Background } from "./background.js";
 import { Enemy, icebull } from "./enemy.js";
 
@@ -125,6 +126,26 @@ window.addEventListener("load", function () {
     });
   }
 
+  // Bullet -> player hit (so we can trigger player GETHIT)
+  function checkBulletPlayerCollisions(bullets, player) {
+    bullets.forEach((bullet) => {
+      if (!bullet.exists) return;
+      const bulletBox = bullet.getHitbox();
+      const pBox = player.getHitbox?.();
+      if (pBox && bullet.hitboxesOverlap(bulletBox, pBox)) {
+        if (player.health > 0) {
+          player.health -= 25; // match enemy impact damage feel
+          player._pendingGetHitAnim = true;
+          if (player.health < 0) player.health = 0;
+          if (player.health <= 0) {
+            player.setState(states.DEAD);
+          }
+        }
+        bullet.exists = false;
+      }
+    });
+  }
+
   function checkGrenadeEnemyCollisions(grenades, enemies) {
     grenades.forEach((grenade) => {
       if (!grenade.hasExploded || grenade._damageApplied) return;
@@ -143,7 +164,7 @@ window.addEventListener("load", function () {
   function animate(timeStamp) {
     const deltaTime = timeStamp - lastTime;
     lastTime = timeStamp;
-
+    checkBulletPlayerCollisions(bullets, player);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // UPDATE PLAYER FIRST
