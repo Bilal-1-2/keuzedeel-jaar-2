@@ -135,7 +135,7 @@ class EnemyCharge extends EnemyState {
   }
 
   enter() {
-    this.enemy.speedX = this.enemy.direction * this.enemy.baseSpeedX *2;
+    this.enemy.speedX = this.enemy.direction * this.enemy.baseSpeedX;
     this.enemy.frameX = 0;
     this.enemy.frameY = 4;
     this.enemy.maxFrame = 6;
@@ -146,17 +146,17 @@ class EnemyCharge extends EnemyState {
     if (!target) return;
 
     const dx = target.x - this.enemy.x;
-    const dist = Math.abs(dx);
 
-    if (dist <= 2) {
-      // tune 1-5 depending on feel
+    // Hit check: real hitbox overlap, not raw x distance.
+    const enemyBox = this.enemy.getHitbox();
+    const playerBox = target.getHitbox();
+
+    if (this.enemy.hitboxesOverlap(enemyBox, playerBox)) {
       this.enemy.setState(enemyStates.IMPACT);
       return;
     }
 
     // Player slipped behind us mid-charge - turn to keep following them.
-    // This intentionally ignores aggroRangeBack: once committed to a
-    // charge, the enemy stays locked on rather than "losing" the player.
     const desiredDirection = dx > 0 ? 1 : -1;
     if (desiredDirection !== this.enemy.direction) {
       this.enemy.pendingDirection = desiredDirection;
@@ -210,7 +210,6 @@ class EnemyGetHit extends EnemyState {
     this.enemy.frameX = 0;
     this.enemy.frameY = 6;
     this.enemy.maxFrame = 5;
-    // TODO: set correct maxFrame/fps/row for GET_HIT.
   }
 
   handleInput() {
@@ -270,6 +269,8 @@ export class Enemy {
     this.health = 1;
     this.isDead = false;
     this.isAlive = true;
+    this.enemywidth = 100;
+    this.enemyheight = 100;
 
     this.direction = 1; // 1 => right, -1 => left
     this.baseSpeedX = 0;
@@ -348,6 +349,23 @@ export class Enemy {
     }
   }
 
+  getHitbox() {
+    return {
+      left: this.x + this.enemywidth / (this.direction > 0 ? 5 : 2.5),
+      right: this.x + this.enemywidth * (this.direction > 0 ? 1.23 : 1.4),
+      top: this.y + 20,
+      bottom: this.y + this.enemyheight,
+    };
+  }
+  hitboxesOverlap(boxA, boxB) {
+    return (
+      boxA.left < boxB.right &&
+      boxA.right > boxB.left &&
+      boxA.top < boxB.bottom &&
+      boxA.bottom > boxB.top
+    );
+  }
+
   update(deltaTime) {
     if (!this.currentState) return;
 
@@ -377,7 +395,15 @@ export class Enemy {
     } else {
       this.frameTimer += deltaTime;
     }
-
+    // in Enemy.draw(), before the sprite drawImage calls
+    const box = this.getHitbox();
+    ctx.strokeStyle = "lime";
+    ctx.strokeRect(
+      box.left,
+      box.top,
+      box.right - box.left,
+      box.bottom - box.top,
+    );
     if (!ctx || !this.image) return;
 
     // Basic sprite sheet draw (assumes row-based frames)
