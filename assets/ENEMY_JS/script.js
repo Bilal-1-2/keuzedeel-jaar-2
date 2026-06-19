@@ -19,7 +19,7 @@ window.worldWidth = 5000; // Make available to player.js
 const worldHeight = 786;
 
 // SCREEN EDGE THRESHOLDS (20% from edges)
-const edgeThreshold = 0.5
+const edgeThreshold = 0.5;
 const leftEdge = edgeThreshold;
 const rightEdge = 1 - edgeThreshold;
 
@@ -63,7 +63,7 @@ window.addEventListener("load", function () {
 
   // Start player: hitbox centered, and sits on the bottom of the screen
   // (player.nx/y are used for both sprite drawing and hitbox debug)
-  player.x = (player.width - player.playerwidth) / 2 ;
+  player.x = (player.width - player.playerwidth) / 2;
   player.y = canvas.height - player.playerheight - player.floorOffset;
 
   attachHealthButton(player);
@@ -105,7 +105,41 @@ window.addEventListener("load", function () {
     // Keep camera within world boundaries
     cameraX = Math.max(0, Math.min(cameraX, window.worldWidth - canvas.width));
   }
+  function checkBulletEnemyCollisions(bullets, enemies) {
+    bullets.forEach((bullet) => {
+      if (!bullet.exists) return; // already dead/hit this frame
 
+      const bulletBox = bullet.getHitbox();
+
+      for (const enemy of enemies) {
+        if (enemy.isDead) continue;
+
+        const enemyBox = enemy.getHitbox();
+
+        if (bullet.hitboxesOverlap(bulletBox, enemyBox)) {
+          enemy.takeDamage(1); // or however much a bullet should do
+          bullet.exists = false; // consume the bullet
+          break; // this bullet is spent, stop checking other enemies
+        }
+      }
+    });
+  }
+
+  function checkGrenadeEnemyCollisions(grenades, enemies) {
+    grenades.forEach((grenade) => {
+      if (!grenade.hasExploded || grenade._damageApplied) return;
+
+      enemies.forEach((enemy) => {
+        if (enemy.isDead) return;
+        const enemyBox = enemy.getHitbox();
+        if (grenade.isInBlastRadius(enemyBox)) {
+          enemy.takeDamage(grenade.damage ?? 50);
+        }
+      });
+
+      grenade._damageApplied = true; // only damage once, the frame it explodes
+    });
+  }
   function animate(timeStamp) {
     const deltaTime = timeStamp - lastTime;
     lastTime = timeStamp;
@@ -126,6 +160,7 @@ window.addEventListener("load", function () {
 
     // UPDATE AND DRAW GRENADES
     grenades.forEach((grenade) => grenade.update(deltaTime));
+    checkGrenadeEnemyCollisions(grenades, enemies);
     grenades = grenades.filter((grenade) => grenade.exists);
     grenades.forEach((grenade) => {
       ctx.save();
@@ -137,6 +172,22 @@ window.addEventListener("load", function () {
     // UPDATE AND DRAW BULLETS
     bullets.forEach((bullet) => bullet.update(deltaTime));
     bullets = bullets.filter((bullet) => bullet.exists);
+
+    // Bullet -> player hit detection (using bullet hitbox)
+    const playerBox = player.getHitbox?.();
+    if (playerBox) {
+      bullets.forEach((bullet) => bullet.update(deltaTime));
+      checkBulletEnemyCollisions(bullets, enemies); // <-- new line
+      bullets = bullets.filter((bullet) => bullet.exists);
+      bullets.forEach((bullet) => {
+        ctx.save();
+        ctx.translate(-cameraX, -cameraY);
+        bullet.draw(ctx, deltaTime);
+        ctx.restore();
+      });
+      bullets = bullets.filter((bullet) => bullet.exists);
+    }
+
     bullets.forEach((bullet) => {
       ctx.save();
       ctx.translate(-cameraX, -cameraY);

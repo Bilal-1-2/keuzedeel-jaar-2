@@ -135,7 +135,7 @@ class EnemyCharge extends EnemyState {
   }
 
   enter() {
-    this.enemy.speedX = this.enemy.direction * this.enemy.baseSpeedX;
+    this.enemy.speedX = this.enemy.direction * this.enemy.baseSpeedX * 3;
     this.enemy.frameX = 0;
     this.enemy.frameY = 4;
     this.enemy.maxFrame = 6;
@@ -176,6 +176,13 @@ class EnemyImpact extends EnemyState {
     this.enemy.frameX = 0;
     this.enemy.frameY = 5;
     this.enemy.maxFrame = 5;
+
+    // Apply damage once when IMPACT starts.
+    // Use the current target player reference.
+    const target = this.enemy.targetPlayer;
+    if (target && typeof target.health === "number") {
+      target.health -= 25;
+    }
   }
 
   handleInput() {
@@ -186,8 +193,14 @@ class EnemyImpact extends EnemyState {
     if (this.enemy.frameX >= this.enemy.maxFrame) {
       if (this.enemy._impactToIdleStartMs === undefined) {
         this.enemy._impactToIdleStartMs = performance.now();
-        // Immediately go idle when impact ends.
-        this.enemy.setState(enemyStates.IDLE);
+
+        // If enemy health dropped (meaning it took damage), play GET_HIT.
+        // Otherwise, return to IDLE.
+        if (this.enemy.health > 0 && this.enemy.health < 3) {
+          this.enemy.setState(enemyStates.GET_HIT);
+        } else {
+          this.enemy.setState(enemyStates.IDLE);
+        }
       } else {
         const elapsedMs = performance.now() - this.enemy._impactToIdleStartMs;
         if (elapsedMs >= 2000) {
@@ -266,7 +279,7 @@ export class Enemy {
     this.maxFrame = 0;
 
     // stats
-    this.health = 1;
+    this.health = 400;
     this.isDead = false;
     this.isAlive = true;
     this.enemywidth = 100;
@@ -461,7 +474,7 @@ export class icebull extends Enemy {
     this.image = document.getElementById("icebull");
 
     // enemy stats
-    this.health = 3;
+    this.health = 20;
 
     // set up enemy states
     this.states = [
