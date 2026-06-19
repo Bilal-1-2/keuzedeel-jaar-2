@@ -37,12 +37,6 @@ class EnemyIdle extends EnemyState {
     if (!target) return;
 
     const dx = target.x - this.enemy.x;
-
-    // If player is within 500px, start walking toward him.
-    // if (Math.abs(dx) <= 500) {
-    //   this.enemy.direction = dx >= 0 ? 1 : -1;
-    //   this.enemy.setState(enemyStates.WALK);
-    // }
   }
 }
 
@@ -96,11 +90,12 @@ class EnemyAnticipation extends EnemyState {
     // TODO: set correct maxFrame/fps/row for ANTICIPATION.
   }
   handleInput() {
-    const target = this.enemy.targetPlayer;
+    // No extra waiting here; charge immediately when ANTICIPATION ends.
+    // Since your Enemy animation frame advances in draw(), we still keep
+    // this transition based on frame progress.
     if (this.enemy.frameX >= this.enemy.maxFrame) {
       this.enemy.setState(enemyStates.CHARGE);
     }
-    if (!target) return;
   }
 }
 
@@ -114,14 +109,17 @@ class EnemyCharge extends EnemyState {
     this.enemy.frameX = 0;
     this.enemy.frameY = 4;
     this.enemy.maxFrame = 6;
-   
+    this.aggroRangeFront = 600;
   }
   handleInput() {
     const target = this.enemy.targetPlayer;
-     if (this.enemy.x === this.targetPlayer.x) {
-      this.setState(enemyStates.IMPACT);
-    }
     if (!target) return;
+
+    const dist = Math.abs(target.x - this.enemy.x);
+    if (dist <= 2) {
+      // tune 1-5 depending on feel
+      this.enemy.setState(enemyStates.IMPACT);
+    }
   }
 }
 
@@ -140,6 +138,27 @@ class EnemyImpact extends EnemyState {
   handleInput() {
     const target = this.enemy.targetPlayer;
     if (!target) return;
+
+    // We want:
+    // 1) IMPACT animation plays
+    // 2) As soon as IMPACT ends, switch to IDLE
+    // 3) Stay in IDLE for 2 more seconds, then continue (re-set to IDLE is harmless)
+
+    // Step 2/3: start idle-wait timer the moment impact ends.
+    if (this.enemy.frameX >= this.enemy.maxFrame) {
+      if (this.enemy._impactToIdleStartMs === undefined) {
+        this.enemy._impactToIdleStartMs = performance.now();
+        // Immediately go idle when impact ends.
+        this.enemy.setState(enemyStates.IDLE);
+      } else {
+        const elapsedMs = performance.now() - this.enemy._impactToIdleStartMs;
+        if (elapsedMs >= 2000) {
+          this.enemy._impactToIdleStartMs = undefined;
+          // Ensure we remain in idle state.
+          this.enemy.setState(enemyStates.IDLE);
+        }
+      }
+    }
   }
 }
 
@@ -226,7 +245,10 @@ export class Enemy {
     this.currentState = null;
     this.previousState = null;
     this.targetPlayer = null;
-    this.aggroRangeFront = 300;
+    // Vision distances
+    // - if player is in front: can see up to 900px
+    // - if player is behind: smaller range
+    this.aggroRangeFront = 900;
     this.aggroRangeBack = 100;
   }
 
@@ -234,6 +256,12 @@ export class Enemy {
     this.previousState = this.currentState?.state;
     this.currentState = this.states[stateEnum];
     this.currentState.enter();
+  }
+
+  // Revert to the last state we were in.
+  revertState() {
+    if (this.previousState === null || this.previousState === undefined) return;
+    this.setState(this.previousState);
   }
 
   checkPlayerDistance() {
@@ -250,15 +278,41 @@ export class Enemy {
     const range = isInFront ? this.aggroRangeFront : this.aggroRangeBack;
 
     if (distance <= range) {
-      // Player detected - face them and walk over
+      // Player detected - face them and start ANTICIPATION
       this.direction = dx > 0 ? 1 : -1;
-      if (
-        this.currentState?.state == enemyStates.IDLE
-      ) {
+      if (this.currentState?.state !== enemyStates.ANTICIPATION) {
         this.setState(enemyStates.ANTICIPATION);
       }
-    } else if (this.currentState?.state !== enemyStates.IDLE) {
-      this.setState(enemyStates.IDLE);
+    } else {
+      // Player NOT in aggro range (or not in front/back logic)
+      // Walk around if not currently attacking.
+      // Use TURN animation when changing facing direction.
+      const desiredDirection = dx > 0 ? 1 : -1;
+
+      // If we need to turn (direction mismatch) play TURN.
+      if (
+        this.currentState?.state !== enemyStates.TURN &&
+        desiredDirection !== this.direction
+      ) {
+        this.direction = desiredDirection;
+        this.setState(enemyStates.TURN);
+        return;
+      }
+
+      // Otherwise walk if we're not idle.
+      if (
+        this.currentState?.state === enemyStates.ANTICIPATION ||
+        this.currentState?.state === enemyStates.CHARGE ||
+        this.currentState?.state === enemyStates.IMPACT
+      ) {
+        // keep current attack/impact state until it finishes
+      } else {
+        // Walk when not seeing player.
+        if (this.currentState?.state !== enemyStates.WALK) {
+          // Ensure speed based on current direction.
+          this.setState(enemyStates.WALK);
+        }
+      }
     }
   }
 
