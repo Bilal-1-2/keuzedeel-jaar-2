@@ -19,7 +19,7 @@ window.worldWidth = 5000; // Make available to player.js
 const worldHeight = 786;
 
 // SCREEN EDGE THRESHOLDS (20% from edges)
-const edgeThreshold = 0.2;
+const edgeThreshold = 0.5
 const leftEdge = edgeThreshold;
 const rightEdge = 1 - edgeThreshold;
 

@@ -49,7 +49,7 @@ class EnemyWalking extends EnemyState {
     this.enemy.maxFrame = 7;
     // pick a random patrol duration before turning around
     this.enemy._walkTimer = 0;
-    this.enemy._walkDuration = 2000 + Math.random() * 2000; // 2-4 seconds
+    this.enemy._walkDuration = 2000 + Math.random() * 1250; // 2-4 seconds
   }
 
   handleInput(deltaTime) {
@@ -135,7 +135,7 @@ class EnemyCharge extends EnemyState {
   }
 
   enter() {
-    this.enemy.speedX = this.enemy.direction * this.enemy.baseSpeedX;
+    this.enemy.speedX = this.enemy.direction * this.enemy.baseSpeedX *2;
     this.enemy.frameX = 0;
     this.enemy.frameY = 4;
     this.enemy.maxFrame = 6;
@@ -292,8 +292,8 @@ export class Enemy {
     // Vision distances
     // - if player is in front: can see up to aggroRangeFront px
     // - if player is behind: smaller range (aggroRangeBack px)
-    this.aggroRangeFront = 300;
-    this.aggroRangeBack = 100;
+    this.aggroRangeFront = 600;
+    this.aggroRangeBack = 200;
   }
 
   setState(stateEnum) {
@@ -430,7 +430,7 @@ export class icebull extends Enemy {
 
     // movement tuning
     this.direction = -1;
-    this.baseSpeedX = 4;
+    this.baseSpeedX = 2;
 
     this.image = document.getElementById("icebull");
 
