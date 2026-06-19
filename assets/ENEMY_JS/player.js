@@ -212,16 +212,15 @@ export default class Player {
     }
     const groundY = this.gameHeight - this.height - this.floorOffset;
     if (this.y >= groundY) this.y = groundY;
-
-    if (this.health <= 0 && !this.isDead) {
-      console.log("Dead anim 4");
-      this.setState(states.DEAD);
-    }
-
     // get-hit animation trigger (set externally by damage code)
     if (this._pendingGetHitAnim && this.health > 0) {
       this._pendingGetHitAnim = false;
+      // state key is GETHIT in states.js (index 9)
       this.setState(states.GETHIT);
+    }
+    if (this.health <= 0 && !this.isDead) {
+      console.log("Dead anim 4");
+      this.setState(states.DEAD);
     }
   }
   getHitbox() {
@@ -239,10 +238,12 @@ export default class Player {
     };
   }
 
-  setState(state) {
-    this.currentState = this.states[state];
-    this.currentState.enter();
-  }
+setState(state) {
+  this.previousState = this._currentNumericState ?? states.STANDING;
+  this._currentNumericState = state;
+  this.currentState = this.states[state];
+  this.currentState.enter();
+}
 
   onGround() {
     const groundY = this.gameHeight - this.height - this.floorOffset;

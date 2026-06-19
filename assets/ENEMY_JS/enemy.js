@@ -348,6 +348,17 @@ export class Enemy {
   // Override in a subclass only if you need different death/hit behavior.
   takeDamage(amount = 1) {
     if (this.isDead) return;
+    // Prevent multiple rapid bullets in the same frame from replaying GET_HIT.
+    // If you want exact multi-hit damage, remove this guard.
+    if (this._lastGetHitAt === undefined) this._lastGetHitAt = 0;
+    const now = performance.now();
+    if (this.currentState?.state === enemyStates.GET_HIT) {
+      // Already in GET_HIT: don't restart animation from frame 0.
+      // Instead continue the current hit reaction from a later frame.
+      this.frameX = Math.max(this.frameX, 3);
+      return;
+    }
+
     this.health -= amount;
     if (this.health < 0) this.health = 0;
 

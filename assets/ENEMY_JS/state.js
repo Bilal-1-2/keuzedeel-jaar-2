@@ -520,59 +520,27 @@ export class Gethit extends State {
   }
 
   enter() {
-    this.player.previousState = states.DEAD;
+    // Remember what we were doing, so we can resume after the hit reaction.
+    this._returnState = this.player.previousState ?? states.STANDING;
     this.player.frameX = 0;
     this.player.frameY = 9;
     this.player.maxFrames = 2;
+    this.player.speed = 0;
   }
 
   handleInput(input) {
-    // PRESS events - check these FIRST
+    this.player.speed = 0;
+
+    // Death takes priority over the hit reaction.
     if (this.player.health <= 0 && this.player.previousState !== states.DEAD) {
       this.player.setState(states.DEAD);
-      console.log("Dead anim: 6");
+      return;
     }
 
-    if (input.lastKey === "PRESS reload" && this.player.magazine < 30) {
-      this.player.setState(states.RELOADING);
-      return;
-    } else if (input.lastKey === "PRESS G" && this.player.grenades > 0) {
-      this.player.speed = 0;
-      this.player.frameX = 0;
-      this.player.setState(states.THROWINGGRENADE);
-      return; // Stop here, don't process movement
-    } else if (input.lastKey === "PRESS CLICK") {
-      this.player.speed = 0;
-      this.player.previousState = states.WALKING;
-      this.player.setState(states.SHOOTING);
-      return; // Stop here, don't process movement
-    } else if (input.lastKey === "PRESS up" && this.player.onGround()) {
-      this.player.previousState = states.WALKING;
-      this.player.setState(states.JUMPING);
-      return;
-    } else if (input.lastKey === "PRESS E") {
-      this.player.previousState = states.WALKING;
-      this.player.setState(states.MELEE);
-      return;
-    }
-    // Toggle between RUNNING and WALKING
-    if (!input.toggles.walkMode) {
-      this.player.setState(states.RUNNING);
-      return;
-    }
-    // HELD logic (only if no PRESS action was taken)
-    if (input.keys.right) {
-      this.player.flip = false;
-      this.player.speed = this.player.maxSpeed * 0.5;
-    } else if (input.keys.left) {
-      this.player.flip = true;
-      this.player.speed = -this.player.maxSpeed * 0.5;
-    } else if (input.keys.down) {
-      this.player.setState(states.RELOADING);
-      return;
-    } else {
-      this.player.setState(states.STANDING);
-      return;
+    // Let the short hit-reaction animation play out fully before
+    // doing anything else.
+    if (this.player.frameX >= this.player.maxFrames) {
+      this.player.setState(this._returnState ?? states.STANDING);
     }
   }
 }
