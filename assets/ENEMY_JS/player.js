@@ -29,7 +29,6 @@ export default class Player {
       new Gethit(this), // 9
     ];
     this.currentState = this.states[0];
-    // this.previousState = states.STANDING;
     this.image = document.getElementById("soldier");
 
     // Render sprite size (full frame)
@@ -41,16 +40,12 @@ export default class Player {
     this.playerwidth = 22;
 
     // Start so the hitbox is centered horizontally, and sits slightly above the bottom.
-    // (Note: script.js will override x/y, but this keeps Player defaults correct.)
     this.x = this.playerwidth / 2;
 
     // How far above the ground the player should rest (in px)
     this.floorOffset = 12;
     this.y = this.gameHeight - this.playerheight - this.floorOffset;
 
-    // These are kept for drawing sprite frames (full sprite size). Do not change.
-    this.width = 128;
-    this.height = 128;
     this.vy = 0;
     this.weight = 0.5;
     this.frameX = 0;
@@ -59,6 +54,7 @@ export default class Player {
     this.speed = 0;
     this.maxSpeed = 10;
     this.flip = false;
+
     // player stats
     this.magazine = 30;
     this.health = 100;
@@ -67,22 +63,27 @@ export default class Player {
     this.isAlive = true;
     this.grenades = 5;
 
+    // Hit cooldown (invincibility frames)
+    this.hitCooldown = 0;
+    this.hitCooldownDuration = 1000; // 1 second invincibility
+
     // Base animation fps
     this.fps = 40;
-    // Shooting animation fps target (60)
     this.shootingFps = 60;
 
     this.frameTimer = 0;
-    this.previousState = states.STANDING; // Store previous state
+    this.previousState = states.STANDING;
+    this._currentNumericState = states.STANDING;
 
     // Default interval for most states
     this.frameInterval = (1000 / this.fps) * 4;
 
     this.animationComplete = false;
-    this.spawnGrenade = spawnGrenade || null; // Optional callback
+    this.spawnGrenade = spawnGrenade || null;
     this.spawnBullet = spawnBullet || null;
-    this.hasThrown = false; // Prevent spam-spawn per throw
-    this.hasShot = false; // Prevent spam-spawn per throw
+    this.hasThrown = false;
+    this.hasShot = false;
+    this._pendingGetHitAnim = false;
   }
 
   drawHealthBar(context) {
@@ -122,12 +123,10 @@ export default class Player {
   draw(context, deltaTime) {
     // Hitbox debug (actual character size)
     context.strokeStyle = "red";
-    // Place hitbox on the bottom of the sprite (not centered vertically)
     context.strokeRect(
       this.flip
         ? this.x + (this.width - this.playerwidth + 20) / 2
         : this.x + (this.width - this.playerwidth - 20) / 2,
-      // Lift the CHARACTER (position box) + hitbox upward by paddingBottom
       this.y + (this.height - this.playerheight - (this.paddingBottom || 0)),
       this.playerwidth,
       this.playerheight,
@@ -139,13 +138,18 @@ export default class Player {
         ? (1000 / this.shootingFps) * 4
         : this.frameInterval;
 
-    if (this.frameTimer > interval) {
+    // For GETHIT state, use a faster interval
+    const effectiveInterval =
+      this.currentState.state === "GETHIT" ? (1000 / 30) * 2 : interval;
+
+    if (this.frameTimer > effectiveInterval) {
       if (this.frameX < this.maxFrames) {
         this.frameX++;
       } else {
         if (
-          this.currentState.state !== "SHOOTING" &&
-          this.currentState.state !== "DEAD"
+          this.currentState.state !== "GETHIT" &&
+          this.currentState.state !== "DEAD" &&
+          this.currentState.state !== "SHOOTING"
         ) {
           this.frameX = 0;
         } else if (this.currentState.state === "SHOOTING") {
@@ -153,17 +157,24 @@ export default class Player {
           this.frameX = 1;
           this.animationComplete = true;
         } else if (this.currentState.state === "DEAD") {
-          // Clamp to last death frame and stop advancing
           this.frameX = this.maxFrames;
-          console.log("Dead anim: 2");
         }
+        // For GETHIT, keep frameX at maxFrames
       }
       this.frameTimer = 0;
     } else {
       this.frameTimer += deltaTime;
     }
 
-    // Rest of draw method remains the same...
+    // Visual feedback for invincibility (flashing)
+    if (this.isInvincible() && this.currentState.state !== "DEAD") {
+      const flash = Math.floor(Date.now() / 100) % 2 === 0;
+      if (flash) {
+        context.globalAlpha = 0.5;
+      }
+    }
+
+    // Draw the player sprite
     if (this.flip) {
       context.save();
       context.scale(-1, 1);
@@ -192,37 +203,63 @@ export default class Player {
         this.height,
       );
     }
+
+    // Reset alpha
+    context.globalAlpha = 1.0;
   }
 
-  // In player.js, update the update() method:
   update(input) {
-    this.currentState.handleInput(input);
-    this.x += this.speed;
-
-    // CHANGE THIS: Use worldWidth instead of gameWidth
-    if (this.x <= 0) this.x = 0;
-    else if (this.x >= window.worldWidth - this.width)
-      this.x = window.worldWidth - this.width;
-
-    this.y += this.vy;
-    if (!this.onGround()) {
-      this.vy += this.weight;
-    } else {
-      this.vy = 0;
+    // Decrease cooldown
+    if (this.hitCooldown > 0) {
+      this.hitCooldown -= 16.67;
+      if (this.hitCooldown < 0) this.hitCooldown = 0;
     }
-    const groundY = this.gameHeight - this.height - this.floorOffset;
-    if (this.y >= groundY) this.y = groundY;
-    // get-hit animation trigger (set externally by damage code)
-    if (this._pendingGetHitAnim && this.health > 0) {
+
+    // Handle the get-hit animation - only if cooldown is ready
+    if (
+      this._pendingGetHitAnim &&
+      this.health > 0 &&
+      !this.isDead &&
+      this.hitCooldown <= 0
+    ) {
       this._pendingGetHitAnim = false;
-      // state key is GETHIT in states.js (index 9)
+      this.hitCooldown = this.hitCooldownDuration;
       this.setState(states.GETHIT);
+      return;
     }
+
+    // Now let the current state handle input
+    this.currentState.handleInput(input);
+
+    // Movement and physics (skip if in GETHIT state)
+    if (this.currentState.state !== "GETHIT") {
+      this.x += this.speed;
+
+      if (this.x <= 0) this.x = 0;
+      else if (this.x >= window.worldWidth - this.width)
+        this.x = window.worldWidth - this.width;
+
+      this.y += this.vy;
+      if (!this.onGround()) {
+        this.vy += this.weight;
+      } else {
+        this.vy = 0;
+      }
+      const groundY = this.gameHeight - this.height - this.floorOffset;
+      if (this.y >= groundY) this.y = groundY;
+    }
+
+    // Check for death LAST
     if (this.health <= 0 && !this.isDead) {
-      console.log("Dead anim 4");
+      console.log("Dead anim from update");
       this.setState(states.DEAD);
     }
   }
+
+  isInvincible() {
+    return this.hitCooldown > 0;
+  }
+
   getHitbox() {
     const left = this.flip
       ? this.x + (this.width - this.playerwidth + 20) / 2
@@ -238,12 +275,15 @@ export default class Player {
     };
   }
 
-setState(state) {
-  this.previousState = this._currentNumericState ?? states.STANDING;
-  this._currentNumericState = state;
-  this.currentState = this.states[state];
-  this.currentState.enter();
-}
+  setState(state) {
+    // Store the current numeric state as previous BEFORE changing
+    if (this._currentNumericState !== states.GETHIT) {
+      this.previousState = this._currentNumericState ?? states.STANDING;
+    }
+    this._currentNumericState = state;
+    this.currentState = this.states[state];
+    this.currentState.enter();
+  }
 
   onGround() {
     const groundY = this.gameHeight - this.height - this.floorOffset;

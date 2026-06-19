@@ -181,17 +181,21 @@ class EnemyImpact extends EnemyState {
 
     // Apply damage once when IMPACT starts.
     const target = this.enemy.targetPlayer;
-    if (target && typeof target.health === "number") {
+    // Check if player is not invincible
+    if (target && typeof target.health === "number" && target.health > 0 && !target.isInvincible?.()) {
       target.health -= 25;
       if (target.health < 0) target.health = 0;
+      // Trigger the hit animation on the player
+      target._pendingGetHitAnim = true;
+      console.log("Player hit by enemy! Health:", target.health);
+
+      if (target.health <= 0) {
+        console.log("Player should die from enemy impact");
+      }
     }
   }
 
   handleInput() {
-    // We want:
-    // 1) IMPACT animation plays
-    // 2) As soon as IMPACT ends, switch to IDLE
-    // 3) Stay in IDLE for 2 more seconds, then continue (re-set to IDLE is harmless)
     if (this.enemy.frameX >= this.enemy.maxFrame) {
       if (this.enemy._impactToIdleStartMs === undefined) {
         this.enemy._impactToIdleStartMs = performance.now();

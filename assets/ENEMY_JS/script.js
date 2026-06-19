@@ -126,19 +126,23 @@ window.addEventListener("load", function () {
     });
   }
 
-  // Bullet -> player hit (so we can trigger player GETHIT)
+
   function checkBulletPlayerCollisions(bullets, player) {
     bullets.forEach((bullet) => {
       if (!bullet.exists) return;
       const bulletBox = bullet.getHitbox();
       const pBox = player.getHitbox?.();
       if (pBox && bullet.hitboxesOverlap(bulletBox, pBox)) {
-        if (player.health > 0) {
-          player.health -= 25; // match enemy impact damage feel
-          player._pendingGetHitAnim = true;
+        // Check if player can be damaged (not invincible)
+        if (player.health > 0 && !player.isDead && !player.isInvincible()) {
+          player.health -= 25;
           if (player.health < 0) player.health = 0;
+          // Set the flag to trigger the hit animation
+          player._pendingGetHitAnim = true;
+          console.log("Player hit by bullet! Health:", player.health);
+
           if (player.health <= 0) {
-            player.setState(states.DEAD);
+            console.log("Player should die");
           }
         }
         bullet.exists = false;

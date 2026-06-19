@@ -453,7 +453,6 @@ export class Shooting extends State {
       }
     }
 
-
     // PRESS events
     if (input.lastKey === "PRESS up" && this.player.onGround()) {
       this.player.setState(states.JUMPING);
@@ -513,38 +512,62 @@ export class Melee extends State {
   }
 }
 
+
 export class Gethit extends State {
   constructor(player) {
     super("GETHIT");
     this.player = player;
+    this._returnState = states.STANDING;
+    this._animationComplete = false;
   }
 
   enter() {
-    // Remember what we were doing, so we can resume after the hit reaction.
+    console.log("Entering GETHIT state, previous state was:", this.player.previousState);
+    // Use the stored previousState, NOT _currentNumericState
+    // The previousState was set in Player.setState before entering
     this._returnState = this.player.previousState ?? states.STANDING;
+    
+    // If for some reason _returnState is GETHIT (9), default to STANDING
+    if (this._returnState === 9) {
+      console.warn("Return state was GETHIT, defaulting to STANDING");
+      this._returnState = states.STANDING;
+    }
+    
     this.player.frameX = 0;
     this.player.frameY = 9;
     this.player.maxFrames = 2;
     this.player.speed = 0;
+    this.player.vy = 0;
+    this._animationComplete = false;
   }
 
   handleInput(input) {
+    // Keep player frozen during hit animation
     this.player.speed = 0;
+    this.player.vy = 0;
 
-    // Death takes priority over the hit reaction.
-    if (this.player.health <= 0 && this.player.previousState !== states.DEAD) {
+    // Death takes priority
+    if (this.player.health <= 0) {
       this.player.setState(states.DEAD);
       return;
     }
 
-    // Let the short hit-reaction animation play out fully before
-    // doing anything else.
+    // Check if animation is complete
     if (this.player.frameX >= this.player.maxFrames) {
-      this.player.setState(this._returnState ?? states.STANDING);
+      console.log("GETHIT animation complete, returning to state:", this._returnState);
+      // Reset the player's frame to prevent issues
+      this.player.frameX = 0;
+      // Return to previous state
+      const returnState = this._returnState ?? states.STANDING;
+      // Don't return to DEAD or GETHIT
+      if (returnState === states.DEAD || returnState === states.GETHIT) {
+        this.player.setState(states.STANDING);
+      } else {
+        this.player.setState(returnState);
+      }
     }
   }
 }
-
 export class Dead extends State {
   constructor(player) {
     super("DEAD");
