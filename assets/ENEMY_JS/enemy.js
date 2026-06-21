@@ -75,7 +75,8 @@ class EnemyWalking extends EnemyState {
     ) {
       // Patrol turn: no pendingDirection, EnemyTurn will know to resume WALK.
       this.enemy.pendingDirection = this.enemy.direction * -1;
-      this.enemy.resumeState = enemyStates.ICE_SKELETON_WALK;
+      // Generic enemies should resume their generic WALK after turning.
+      this.enemy.resumeState = enemyStates.WALK;
       this.enemy.setState(enemyStates.TURN);
     }
   }
@@ -139,7 +140,7 @@ class EnemyCharge extends EnemyState {
   }
 
   enter() {
-    this.enemy.speedX = this.enemy.direction * this.enemy.baseSpeedX *1.4;
+    this.enemy.speedX = this.enemy.direction * this.enemy.baseSpeedX * 1.4;
     this.enemy.frameX = 0;
     this.enemy.frameY = 4;
     this.enemy.maxFrame = 6;
@@ -333,7 +334,7 @@ export class Enemy {
     // Vision distances
     // - if player is in front: can see up to aggroRangeFront px
     // - if player is behind: smaller range (aggroRangeBack px)
-    this.aggroRangeFront = 600;
+    this.aggroRangeFront = 200;
     this.aggroRangeBack = 200;
 
     this._deathAnimDone = false;
@@ -429,7 +430,7 @@ export class Enemy {
       right: this.x + this.enemywidth * (this.direction > 0 ? 1.23 : 1.4),
       top: this.y + 20,
       bottom: this.y + this.enemyheight,
-    }; 
+    };
     return {
       left:
         this.x + this.iceSkeletonenemywidth / (this.direction > 0 ? 1.8 : 3.55),
