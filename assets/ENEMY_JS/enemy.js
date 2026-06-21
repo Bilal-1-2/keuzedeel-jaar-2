@@ -290,7 +290,7 @@ export class Enemy {
 
     // sprite animation
     // Enemy animation fps (independent from the player)
-    this.fps = 5;
+    this.fps = 50;
     this.frameTimer = 0;
     this.frameInterval = 1000 / this.fps;
 
@@ -429,7 +429,13 @@ export class Enemy {
       right: this.x + this.enemywidth * (this.direction > 0 ? 1.23 : 1.4),
       top: this.y + 20,
       bottom: this.y + this.enemyheight,
+      left: this.x + this.iceSkeletonenemywidth / (this.direction > 0 ? 1.8 : 3.55),
+      right: this.x + this.iceSkeletonenemywidth * (this.direction > 0 ? 1.8 : 1.4),
+      top: this.y + 20,
+      bottom: this.y + this.iceSkeletonenemyheight,
     };
+
+
   }
 
   hitboxesOverlap(boxA, boxB) {
@@ -556,10 +562,6 @@ export class Enemy {
   }
 }
 
-
-
-
-
 export class icebull extends Enemy {
   constructor() {
     super();
@@ -664,13 +666,20 @@ class IceSkeletonWalkingState extends EnemyState {
 
 class IceSkeletonDeathState extends EnemyState {
   constructor(enemy) {
-    super(enemyStates.DEATH, enemy);
+    super(enemyStates.ICE_SKELETON_DEATH, enemy);
   }
 
   enter() {
     this.enemy.speedX = 0;
     this.enemy.isDead = true;
     this.enemy.isAlive = false;
+
+    // Force 5fps death animation (instead of using Enemy.fps=5 which might be
+    // changed elsewhere). We do it by overriding the animation timing.
+    this.enemy._prevDeathFrameInterval = this.enemy.frameInterval;
+    this.enemy._prevDeathFps = this.enemy.fps;
+    this.enemy.fps = 5; // 5 frames per second
+    this.enemy.frameInterval = 1000 / this.enemy.fps;
 
     this.enemy.frameX = 0;
     this.enemy.frameY = 1;
@@ -684,9 +693,24 @@ class IceSkeletonDeathState extends EnemyState {
   handleInput() {
     this.enemy.speedX = 0;
 
+    // Stick on the last death frame and prevent frame progression.
     if (this.enemy.frameX >= this.enemy.maxFrame) {
       this.enemy.frameX = this.enemy.maxFrame;
       this.enemy._deathAnimDone = true;
+
+      // Restore original fps/frameInterval so it doesn't affect other states.
+      if (this.enemy._prevDeathFrameInterval !== undefined) {
+        this.enemy.frameInterval = this.enemy._prevDeathFrameInterval;
+        this.enemy._prevDeathFrameInterval = undefined;
+      }
+      if (this.enemy._prevDeathFps !== undefined) {
+        this.enemy.fps = this.enemy._prevDeathFps;
+        this.enemy._prevDeathFps = undefined;
+      }
+
+      // Freeze further animation updates (Enemy.draw() would otherwise
+      // keep advancing frames because it doesn't know we're "dead" here).
+      this.enemy.frameTimer = 0;
     }
 
     if (
@@ -708,10 +732,10 @@ export class iceSkeleton extends Enemy {
 
     // Render sprite size (full frame)
     this.width = 90;
-    this.height = 73.34;
+    this.height = 80;
 
-    this.enemywidth = 45;
-    this.enemyheight = 73;
+    this.iceSkeletonenemywidth = 45;
+    this.iceSkeletonenemyheight = 80;
 
     this.x = 1000;
     this.y = 0;
