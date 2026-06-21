@@ -75,8 +75,7 @@ class EnemyWalking extends EnemyState {
     ) {
       // Patrol turn: no pendingDirection, EnemyTurn will know to resume WALK.
       this.enemy.pendingDirection = this.enemy.direction * -1;
-      // Generic enemies should resume their generic WALK after turning.
-      this.enemy.resumeState = enemyStates.WALK;
+      this.enemy.resumeState = enemyStates.WALK; // FIX: was ICE_SKELETON_WALK
       this.enemy.setState(enemyStates.TURN);
     }
   }
@@ -144,6 +143,8 @@ class EnemyCharge extends EnemyState {
     this.enemy.frameX = 0;
     this.enemy.frameY = 4;
     this.enemy.maxFrame = 6;
+    // Reset the "last seen" clock whenever we (re)start a charge.
+    this.enemy._lastSeenPlayerAt = performance.now();
   }
 
   handleInput() {
@@ -151,6 +152,7 @@ class EnemyCharge extends EnemyState {
     if (!target) return;
 
     const dx = target.x - this.enemy.x;
+    const distance = Math.abs(dx);
 
     // Hit check: real hitbox overlap, not raw x distance.
     const enemyBox = this.enemy.getHitbox();
@@ -161,9 +163,29 @@ class EnemyCharge extends EnemyState {
       return;
     }
 
-    // Player slipped behind us mid-charge - turn to keep following them.
-    // This intentionally ignores aggroRangeBack: once committed to a
-    // charge, the enemy stays locked on rather than "losing" the player.
+    // While charging, the player is "tracked" as long as they're in
+    // front of us and within the front aggro range (used here as the
+    // chase leash). If they slip outside that for too long, give up.
+    const isInFront =
+      (dx > 0 && this.enemy.direction === 1) ||
+      (dx < 0 && this.enemy.direction === -1);
+    const stillTracked = isInFront && distance <= this.enemy.aggroRangeFront;
+
+    if (stillTracked) {
+      this.enemy._lastSeenPlayerAt = performance.now();
+    } else {
+      const timeSinceLastSeen =
+        performance.now() - (this.enemy._lastSeenPlayerAt ?? 0);
+      const giveUpDelayMs = this.enemy.loseTrackDelayMs ?? 2000;
+
+      if (timeSinceLastSeen >= giveUpDelayMs) {
+        // Lost the player for long enough - give up and go back to patrol.
+        this.enemy.setState(enemyStates.WALK);
+        return;
+      }
+    }
+
+    // Player slipped behind/beside us mid-charge - turn to keep following.
     const desiredDirection = dx > 0 ? 1 : -1;
     if (desiredDirection !== this.enemy.direction) {
       this.enemy.pendingDirection = desiredDirection;
@@ -186,7 +208,6 @@ class EnemyImpact extends EnemyState {
 
     // Apply damage once when IMPACT starts.
     const target = this.enemy.targetPlayer;
-    // Check if player is not invincible
     if (
       target &&
       typeof target.health === "number" &&
@@ -195,9 +216,7 @@ class EnemyImpact extends EnemyState {
     ) {
       target.health -= 25;
       if (target.health < 0) target.health = 0;
-      // Trigger the hit animation on the player
       target._pendingGetHitAnim = true;
-      console.log("Player hit by enemy! Health:", target.health);
 
       if (target.health <= 0) {
         console.log("Player should die from enemy impact");
@@ -258,22 +277,18 @@ class EnemyDead extends EnemyState {
     this.enemy.maxFrame = 15;
 
     this.enemy._deathAnimDone = false;
-    // after animation is finished, vanish after a short delay
     this.enemy._deathStartMs = performance.now();
-    this.enemy._deathVanishDelayMs = 4000; // requested: vanish 4s after enemy dies
+    this.enemy._deathVanishDelayMs = 4000;
   }
 
   handleInput() {
-    // Dead is final - no movement, no transitions out.
     this.enemy.speedX = 0;
 
-    // clamp on last frame instead of looping
     if (this.enemy.frameX >= this.enemy.maxFrame) {
       this.enemy.frameX = this.enemy.maxFrame;
       this.enemy._deathAnimDone = true;
     }
 
-    // vanish after delay
     if (
       this.enemy._deathAnimDone &&
       performance.now() - this.enemy._deathStartMs >=
@@ -289,25 +304,19 @@ export class Enemy {
     this.frameX = 0;
     this.frameY = 0;
 
-    // sprite animation
-    // Enemy animation fps (independent from the player)
     this.fps = 10;
     this.frameTimer = 0;
     this.frameInterval = 1000 / this.fps;
 
-    // movement/position
     this.x = 0;
     this.y = 0;
     this.speedX = 0;
 
-    // hitbox / rendering defaults (override in subclasses)
     this.width = 0;
     this.height = 0;
 
-    // animation frames
     this.maxFrame = 0;
 
-    // stats
     this.health = 1;
     this.maxHealth = 1;
     this.isDead = false;
@@ -316,28 +325,30 @@ export class Enemy {
     this.direction = 1; // 1 => right, -1 => left
     this.baseSpeedX = 0;
 
-    // optional death frame overrides
     this.deathFrameX = 0;
     this.deathFrameY = 0;
 
-    // state machine
     this.states = [];
     this.currentState = null;
     this.previousState = null;
     this.targetPlayer = null;
 
-    // Used by EnemyTurn to know the target facing direction and which
-    // state to resume once the turn animation finishes.
     this.pendingDirection = undefined;
     this.resumeState = undefined;
 
     // Vision distances
     // - if player is in front: can see up to aggroRangeFront px
     // - if player is behind: smaller range (aggroRangeBack px)
-    this.aggroRangeFront = 200;
+    this.aggroRangeFront = 600;
     this.aggroRangeBack = 200;
 
+    // How long (ms) the enemy keeps chasing after losing sight of the
+    // player before giving up and returning to patrol.
+    this.loseTrackDelayMs = 2000;
+
     this._deathAnimDone = false;
+    this._isAlerted = false;
+    this._lastSeenPlayerAt = 0;
   }
 
   setState(stateEnum) {
@@ -352,29 +363,29 @@ export class Enemy {
     this.currentState.enter();
   }
 
-  // Revert to the last state we were in.
   revertState() {
-    if (this.previousState === null || this.previousState === undefined) return;
+    if (this.previousState === null || this.previousState === undefined)
+      return;
     this.setState(this.previousState);
   }
 
   // Shared damage entry point - any subclass gets this for free.
-  // Override in a subclass only if you need different death/hit behavior.
   takeDamage(amount = 1) {
     if (this.isDead) return;
-    // Prevent multiple rapid bullets in the same frame from replaying GET_HIT.
-    // If you want exact multi-hit damage, remove this guard.
-    if (this._lastGetHitAt === undefined) this._lastGetHitAt = 0;
-    const now = performance.now();
+
     if (this.currentState?.state === enemyStates.GET_HIT) {
       // Already in GET_HIT: don't restart animation from frame 0.
-      // Instead continue the current hit reaction from a later frame.
       this.frameX = Math.max(this.frameX, 3);
       return;
     }
 
     this.health -= amount;
     if (this.health < 0) this.health = 0;
+
+    // Being hit always alerts the enemy, regardless of vision range -
+    // checkPlayerDistance()/EnemyCharge will pick this up next frame.
+    this._isAlerted = true;
+    this._lastSeenPlayerAt = performance.now();
 
     if (this.health <= 0) {
       this.setState(enemyStates.DEATH);
@@ -405,13 +416,15 @@ export class Enemy {
     const range = isInFront ? this.aggroRangeFront : this.aggroRangeBack;
     const canSeePlayer = distance <= range;
 
-    if (canSeePlayer) {
+    if (canSeePlayer || this._isAlerted) {
+      // Either we can currently see them, or we were alerted (e.g. shot
+      // from outside our normal vision range) - react immediately.
+      this._isAlerted = false;
+      this._lastSeenPlayerAt = performance.now();
+
       const desiredDirection = dx > 0 ? 1 : -1;
 
       if (desiredDirection !== this.direction) {
-        // Don't flip direction yet - just start the turn animation.
-        // EnemyTurn will flip this.direction once the animation finishes,
-        // then resume ANTICIPATION (freshly spotted the player).
         this.pendingDirection = desiredDirection;
         this.resumeState = enemyStates.ANTICIPATION;
         this.setState(enemyStates.TURN);
@@ -431,14 +444,6 @@ export class Enemy {
       top: this.y + 20,
       bottom: this.y + this.enemyheight,
     };
-    return {
-      left:
-        this.x + this.iceSkeletonenemywidth / (this.direction > 0 ? 1.8 : 3.55),
-      right:
-        this.x + this.iceSkeletonenemywidth * (this.direction > 0 ? 1.8 : 1.4),
-      top: this.y + 20,
-      bottom: this.y + this.iceSkeletonenemyheight,
-    };
   }
 
   hitboxesOverlap(boxA, boxB) {
@@ -453,8 +458,6 @@ export class Enemy {
   update(deltaTime) {
     if (!this.currentState) return;
 
-    // Let current state decide transitions (distance checks etc.).
-    // Some states may use targetPlayer/x in their logic.
     this.checkPlayerDistance();
     this.currentState.handleInput(deltaTime);
 
@@ -484,15 +487,12 @@ export class Enemy {
 
     const pct = Math.max(0, this.health / this.maxHealth);
 
-    // background
     ctx.fillStyle = "rgba(0,0,0,0.6)";
     ctx.fillRect(x, y, barWidth, barHeight);
 
-    // fill
     ctx.fillStyle = pct > 0.5 ? "#4caf50" : pct > 0.2 ? "#ffb300" : "#e53935";
     ctx.fillRect(x, y, barWidth * pct, barHeight);
 
-    // border
     ctx.strokeStyle = "black";
     ctx.lineWidth = 1;
     ctx.strokeRect(x, y, barWidth, barHeight);
@@ -501,7 +501,6 @@ export class Enemy {
   draw(ctx, deltaTime) {
     if (this.isVanished) return;
 
-    // Advance animation timer
     if (this.frameTimer > this.frameInterval) {
       if (this.frameX < this.maxFrame) {
         this.frameX++;
@@ -515,7 +514,6 @@ export class Enemy {
 
     if (!ctx || !this.image) return;
 
-    // Debug hitbox
     const box = this.getHitbox();
     ctx.strokeStyle = "lime";
     ctx.strokeRect(
@@ -525,13 +523,10 @@ export class Enemy {
       box.bottom - box.top,
     );
 
-    // Health bar (hide once fully dead and animation finished, optional)
     if (!this.isDead || !this._deathAnimDone) {
       this.drawHealthBar(ctx);
     }
 
-    // Basic sprite sheet draw (assumes row-based frames)
-    // Mirror like Player.js does when facing left.
     const shouldFlip = this.direction < 0;
 
     if (shouldFlip) {
@@ -569,12 +564,9 @@ export class icebull extends Enemy {
   constructor() {
     super();
 
-    // Render sprite size (full frame)
     this.width = 162.4;
     this.height = 106;
 
-    // Hitbox size (used by getHitbox/overlap). If these are left 0/undefined,
-    // collisions will never register.
     this.enemywidth = 100;
     this.enemyheight = 100;
 
@@ -583,17 +575,14 @@ export class icebull extends Enemy {
 
     this.maxFrame = 5;
 
-    // movement tuning
     this.direction = -1;
     this.baseSpeedX = 4;
 
     this.image = document.getElementById("icebull");
 
-    // enemy stats
     this.health = 100;
     this.maxHealth = 100;
 
-    // set up enemy states
     this.states = [
       new EnemyIdle(this), // IDLE
       new EnemyWalking(this), // WALK
@@ -608,35 +597,29 @@ export class icebull extends Enemy {
     this.setState(enemyStates.IDLE);
   }
 
-  // takeDamage() is inherited from Enemy - no need to redefine it here
-  // unless icebull needs special death/hit behavior.
+  // takeDamage() is inherited from Enemy.
 }
 
-// Ice Skeleton specific states (independent enums)
+// ---- Ice Skeleton (separate, simpler enemy type) ----
+
 class IceSkeletonWalkingState extends EnemyState {
   constructor(enemy) {
     super(enemyStates.ICE_SKELETON_WALK, enemy);
   }
 
   enter() {
-    // Start walk animation
     this.enemy.frameX = 0;
     this.enemy.frameY = this.enemy.walkFrameY ?? 0;
     this.enemy.maxFrame = this.enemy.walkMaxFrame ?? 7;
-
-    // Do not stop when player is seen; we continuously follow.
   }
 
   handleInput(deltaTime) {
-    // Loop walk animation
     if (this.enemy.frameX >= this.enemy.maxFrame) {
       this.enemy.frameX = 0;
     }
 
-    // Follow player: move towards the player's X.
     const target = this.enemy.targetPlayer;
     if (!target || this.enemy.isDead) {
-      // Fallback: keep current direction walking.
       this.enemy.speedX = this.enemy.direction * this.enemy.baseSpeedX;
       return;
     }
@@ -644,11 +627,9 @@ class IceSkeletonWalkingState extends EnemyState {
     const playerBox = target.getHitbox?.();
     const enemyBox = this.enemy.getHitbox();
 
-    // Move towards the PLAYER HITBOX (not the center): stop when touching.
     const isTouching =
       playerBox && this.enemy.hitboxesOverlap(enemyBox, playerBox);
 
-    // Face target without jitter when overlapping.
     const dx = target.x - this.enemy.x;
     const deadZone = this.enemy.directionFlipDeadZonePx ?? 5;
     const desiredDirection =
@@ -658,13 +639,10 @@ class IceSkeletonWalkingState extends EnemyState {
       this.enemy.direction = desiredDirection;
     }
 
-    // Keep animation playing but don't overshoot past the hitbox edge.
     this.enemy.speedX = isTouching
       ? 0
       : this.enemy.direction * this.enemy.baseSpeedX;
 
-    // Optional: edge handling - if you don't want falling outside the world,
-    // clamp by turning around immediately.
     const hitLeftEdge = this.enemy.x <= 0;
     const hitRightEdge =
       this.enemy.x >= (window.worldWidth ?? Infinity) - this.enemy.width;
@@ -689,11 +667,9 @@ class IceSkeletonDeathState extends EnemyState {
     this.enemy.isDead = true;
     this.enemy.isAlive = false;
 
-    // Force 5fps death animation (instead of using Enemy.fps=5 which might be
-    // changed elsewhere). We do it by overriding the animation timing.
     this.enemy._prevDeathFrameInterval = this.enemy.frameInterval;
     this.enemy._prevDeathFps = this.enemy.fps;
-    this.enemy.fps = 5; // 5 frames per second
+    this.enemy.fps = 5;
     this.enemy.frameInterval = 1000 / this.enemy.fps;
 
     this.enemy.frameX = 0;
@@ -708,12 +684,10 @@ class IceSkeletonDeathState extends EnemyState {
   handleInput() {
     this.enemy.speedX = 0;
 
-    // Stick on the last death frame and prevent frame progression.
     if (this.enemy.frameX >= this.enemy.maxFrame) {
       this.enemy.frameX = this.enemy.maxFrame;
       this.enemy._deathAnimDone = true;
 
-      // Restore original fps/frameInterval so it doesn't affect other states.
       if (this.enemy._prevDeathFrameInterval !== undefined) {
         this.enemy.frameInterval = this.enemy._prevDeathFrameInterval;
         this.enemy._prevDeathFrameInterval = undefined;
@@ -723,8 +697,6 @@ class IceSkeletonDeathState extends EnemyState {
         this.enemy._prevDeathFps = undefined;
       }
 
-      // Freeze further animation updates (Enemy.draw() would otherwise
-      // keep advancing frames because it doesn't know we're "dead" here).
       this.enemy.frameTimer = 0;
     }
 
@@ -742,37 +714,30 @@ export class iceSkeleton extends Enemy {
   constructor() {
     super();
 
-    // Override: transitions out of ICE skeleton WALK should resume this state.
     this.iceWalkState = enemyStates.ICE_SKELETON_WALK;
 
-    // Render sprite size (full frame)
     this.width = 90;
     this.height = 80;
 
-    this.iceSkeletonenemywidth = 45;
-    this.iceSkeletonenemyheight = 80;
+    this.enemywidth = 45;
+    this.enemyheight = 80;
 
     this.x = 1000;
     this.y = 0;
 
-    // movement tuning
     this.direction = -1;
     this.baseSpeedX = 4;
 
     this.image = document.getElementById("iceskeleton");
 
-    // enemy stats
     this.health = 10;
     this.maxHealth = 10;
 
-    // Ice skeleton sprite mapping defaults.
-    // Update these two rows/frames if your sprite sheet uses different values.
     this.walkFrameY = 0;
     this.walkMaxFrame = 7;
     this.deathFrameY = 1;
     this.deathMaxFrame = 5;
 
-    // set up enemy states (must use numeric enums)
     this.states = [];
     this.states[enemyStates.ICE_SKELETON_WALK] = new IceSkeletonWalkingState(
       this,
@@ -781,9 +746,23 @@ export class iceSkeleton extends Enemy {
       this,
     );
 
-    // Start in the ice skeleton's own WALK state
     this.setState(enemyStates.ICE_SKELETON_WALK);
   }
+
+  // Ice skeleton uses its own simplified hitbox.
+  getHitbox() {
+    return {
+      left:
+        this.x +
+        this.enemywidth / (this.direction > 0 ? 1.8 : 3.55),
+      right:
+        this.x +
+        this.enemywidth * (this.direction > 0 ? 1.8 : 1.4),
+      top: this.y + 20,
+      bottom: this.y + this.enemyheight,
+    };
+  }
+
   takeDamage(amount = 1) {
     if (this.isDead) return;
     this.health -= amount;
