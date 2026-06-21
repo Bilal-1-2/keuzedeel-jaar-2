@@ -75,7 +75,7 @@ window.addEventListener("load", function () {
   const enemies = [];
 
   // Spawn enemy
-  const enemy = new iceSkeleton();
+  const enemy = new icebull();
 
   enemy.x = 900;
   enemy.y = canvas.height - enemy.height - (player.floorOffset || 12);

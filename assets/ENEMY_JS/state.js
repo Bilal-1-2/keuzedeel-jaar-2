@@ -95,7 +95,17 @@ export class Reloading extends State {
       // stop reload state immediately
       this.player.speed = 0;
       this.player.frameX = 1;
-      this.player.setState(this.player.previousState || states.STANDING);
+
+      // IMPORTANT: reload should end back to a MOVEMENT/IDLE state,
+      // not back to RELOADING or into a state that immediately restarts.
+      // Use current input to decide.
+      if (input.keys.right || input.keys.left) {
+        this.player.setState(states.RUNNING);
+      } else if (input.keys.down) {
+        this.player.setState(states.RELOADING);
+      } else {
+        this.player.setState(states.STANDING);
+      }
       return;
     } else {
       this.player.speed = 0;
@@ -512,33 +522,22 @@ export class Melee extends State {
   }
 }
 
-
 export class Gethit extends State {
   constructor(player) {
     super("GETHIT");
     this.player = player;
     this._returnState = states.STANDING;
-    this._animationComplete = false;
   }
 
   enter() {
-    console.log("Entering GETHIT state, previous state was:", this.player.previousState);
-    // Use the stored previousState, NOT _currentNumericState
-    // The previousState was set in Player.setState before entering
-    this._returnState = this.player.previousState ?? states.STANDING;
-    
-    // If for some reason _returnState is GETHIT (9), default to STANDING
-    if (this._returnState === 9) {
-      console.warn("Return state was GETHIT, defaulting to STANDING");
-      this._returnState = states.STANDING;
-    }
-    
+    // Other state transitions during the animation shouldn't change this.
+    const prev = this.player.previousState;
+
     this.player.frameX = 0;
     this.player.frameY = 9;
     this.player.maxFrames = 2;
     this.player.speed = 0;
     this.player.vy = 0;
-    this._animationComplete = false;
   }
 
   handleInput(input) {
@@ -554,20 +553,22 @@ export class Gethit extends State {
 
     // Check if animation is complete
     if (this.player.frameX >= this.player.maxFrames) {
-      console.log("GETHIT animation complete, returning to state:", this._returnState);
-      // Reset the player's frame to prevent issues
-      this.player.frameX = 0;
-      // Return to previous state
-      const returnState = this._returnState ?? states.STANDING;
-      // Don't return to DEAD or GETHIT
-      if (returnState === states.DEAD || returnState === states.GETHIT) {
-        this.player.setState(states.STANDING);
-      } else {
-        this.player.setState(returnState);
+      if (
+        input.keys.click === true &&
+        this.player.frameX >= this.player.maxFrames
+      ) {
+        this.player.previousState = states.STANDING;
+        this.player.setState(states.SHOOTING);
+      }
+
+      else {
+        this.player.setState(this.player.previousState || states.STANDING);
+        return;
       }
     }
   }
 }
+
 export class Dead extends State {
   constructor(player) {
     super("DEAD");

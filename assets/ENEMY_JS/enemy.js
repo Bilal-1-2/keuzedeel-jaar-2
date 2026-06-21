@@ -139,7 +139,7 @@ class EnemyCharge extends EnemyState {
   }
 
   enter() {
-    this.enemy.speedX = this.enemy.direction * this.enemy.baseSpeedX * 2;
+    this.enemy.speedX = this.enemy.direction * this.enemy.baseSpeedX *1.4;
     this.enemy.frameX = 0;
     this.enemy.frameY = 4;
     this.enemy.maxFrame = 6;
@@ -290,7 +290,7 @@ export class Enemy {
 
     // sprite animation
     // Enemy animation fps (independent from the player)
-    this.fps = 50;
+    this.fps = 10;
     this.frameTimer = 0;
     this.frameInterval = 1000 / this.fps;
 
@@ -429,13 +429,15 @@ export class Enemy {
       right: this.x + this.enemywidth * (this.direction > 0 ? 1.23 : 1.4),
       top: this.y + 20,
       bottom: this.y + this.enemyheight,
-      left: this.x + this.iceSkeletonenemywidth / (this.direction > 0 ? 1.8 : 3.55),
-      right: this.x + this.iceSkeletonenemywidth * (this.direction > 0 ? 1.8 : 1.4),
+    }; 
+    return {
+      left:
+        this.x + this.iceSkeletonenemywidth / (this.direction > 0 ? 1.8 : 3.55),
+      right:
+        this.x + this.iceSkeletonenemywidth * (this.direction > 0 ? 1.8 : 1.4),
       top: this.y + 20,
       bottom: this.y + this.iceSkeletonenemyheight,
     };
-
-
   }
 
   hitboxesOverlap(boxA, boxB) {
@@ -638,15 +640,27 @@ class IceSkeletonWalkingState extends EnemyState {
       return;
     }
 
-    const dx = target.x - this.enemy.x;
-    const desiredDirection = dx >= 0 ? 1 : -1;
+    const playerBox = target.getHitbox?.();
+    const enemyBox = this.enemy.getHitbox();
 
-    // Flip (by direction + mirror draw) and walk.
+    // Move towards the PLAYER HITBOX (not the center): stop when touching.
+    const isTouching =
+      playerBox && this.enemy.hitboxesOverlap(enemyBox, playerBox);
+
+    // Face target without jitter when overlapping.
+    const dx = target.x - this.enemy.x;
+    const deadZone = this.enemy.directionFlipDeadZonePx ?? 5;
+    const desiredDirection =
+      Math.abs(dx) <= deadZone ? this.enemy.direction : dx >= 0 ? 1 : -1;
+
     if (desiredDirection !== this.enemy.direction) {
       this.enemy.direction = desiredDirection;
     }
 
-    this.enemy.speedX = this.enemy.direction * this.enemy.baseSpeedX;
+    // Keep animation playing but don't overshoot past the hitbox edge.
+    this.enemy.speedX = isTouching
+      ? 0
+      : this.enemy.direction * this.enemy.baseSpeedX;
 
     // Optional: edge handling - if you don't want falling outside the world,
     // clamp by turning around immediately.
