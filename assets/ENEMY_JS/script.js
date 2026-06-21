@@ -5,6 +5,7 @@ import InputHandler from "./input.js";
 import { drawStatusText, attachHealthButton } from "./utils.js";
 import { states } from "./state.js";
 import { Background } from "./background.js";
+import { getLevel } from "./levels.js";
 import { Enemy, icebull, iceSkeleton } from "./enemy.js";
 
 let grenades = [];
@@ -16,8 +17,10 @@ let cameraX = 0;
 let cameraY = 0;
 
 // WORLD BOUNDARIES
-window.worldWidth = 5000; // Make available to player.js
-const worldHeight = 786;
+const currentLevelKey = "winter2";
+const currentLevel = getLevel(currentLevelKey);
+
+window.worldWidth = currentLevel.worldWidth;
 
 // SCREEN EDGE THRESHOLDS (20% from edges)
 const edgeThreshold = 0.5;
@@ -75,17 +78,13 @@ window.addEventListener("load", function () {
   const enemies = [];
 
   // Spawn enemy
-  const enemy = new iceSkeleton();
-
-  enemy.x = 900;
-  enemy.y = canvas.height - enemy.height - (player.floorOffset || 12);
-  enemy.targetPlayer = player;
-  enemy.gameWidth = window.worldWidth;
-  enemy.gameHeight = canvas.height;
-  enemies.push(enemy);
+  const enemySpawners = {
+    icebull: () => new icebull(),
+    iceSkeleton: () => new iceSkeleton(),
+  };
 
   // Initialize background
-  background = new Background(game);
+ background = new Background(currentLevel.background);
 
   let lastTime = 0;
 

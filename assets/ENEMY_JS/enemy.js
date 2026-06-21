@@ -364,8 +364,7 @@ export class Enemy {
   }
 
   revertState() {
-    if (this.previousState === null || this.previousState === undefined)
-      return;
+    if (this.previousState === null || this.previousState === undefined) return;
     this.setState(this.previousState);
   }
 
@@ -597,10 +596,10 @@ export class icebull extends Enemy {
     this.setState(enemyStates.IDLE);
   }
 
-  // takeDamage() is inherited from Enemy.
+
 }
 
-// ---- Ice Skeleton (separate, simpler enemy type) ----
+
 
 class IceSkeletonWalkingState extends EnemyState {
   constructor(enemy) {
@@ -719,8 +718,8 @@ export class iceSkeleton extends Enemy {
     this.width = 90;
     this.height = 80;
 
-    this.enemywidth = 45;
-    this.enemyheight = 80;
+    this.iceSkeletonenemywidth = 45;
+    this.iceSkeletonenemyheight = 80;
 
     this.x = 1000;
     this.y = 0;
@@ -753,13 +752,11 @@ export class iceSkeleton extends Enemy {
   getHitbox() {
     return {
       left:
-        this.x +
-        this.enemywidth / (this.direction > 0 ? 1.8 : 3.55),
+        this.x + this.iceSkeletonenemywidth / (this.direction > 0 ? 1.8 : 3.55),
       right:
-        this.x +
-        this.enemywidth * (this.direction > 0 ? 1.8 : 1.4),
+        this.x + this.iceSkeletonenemywidth * (this.direction > 0 ? 1.8 : 1.4),
       top: this.y + 20,
-      bottom: this.y + this.enemyheight,
+      bottom: this.y + this.iceSkeletonenemyheight,
     };
   }
 
