@@ -9,8 +9,9 @@ export const enemyStates = {
   DEATH: 7,
 
   // Ice skeleton specific (independent from generic Enemy WALK)
-  ICE_SKELETON_WALK: 8,
-  ICE_SKELETON_DEATH: 9,
+  ICE_SKELETON_IDLE: 8,
+  ICE_SKELETON_WALK: 9,
+  ICE_SKELETON_DEATH: 10,
 };
 
 class EnemyState {
@@ -514,7 +515,7 @@ export class Enemy {
     if (!ctx || !this.image) return;
 
     const box = this.getHitbox();
-    ctx.strokeStyle = "lime";
+    ctx.strokeStyle = "#00ff0000";
     ctx.strokeRect(
       box.left,
       box.top,
@@ -595,11 +596,37 @@ export class icebull extends Enemy {
 
     this.setState(enemyStates.IDLE);
   }
-
-
 }
 
+class IceSkeletonIdleState extends EnemyState {
+  constructor(enemy) {
+    super(enemyStates.ICE_SKELETON_IDLE, enemy);
+  }
 
+  enter() {
+    this.enemy.speedX = 0;
+    // Single, fixed frame - no animation while idle/asleep.
+    this.enemy.frameX =  0;
+    this.enemy.frameY =  2;
+    this.enemy.maxFrame = 0; // stays put, no advance
+  }
+
+  handleInput() {
+    this.enemy.speedX = 0;
+
+    const target = this.enemy.targetPlayer;
+    if (!target || this.enemy.isDead) return;
+
+    const dx = target.x - this.enemy.x;
+    const distance = Math.abs(dx);
+
+    if (distance <= (this.enemy.wakeRange ?? 200)) {
+      // Player got close enough - wake up and start walking.
+      this.enemy.direction = dx >= 0 ? 1 : -1;
+      this.enemy.setState(enemyStates.ICE_SKELETON_WALK);
+    }
+  }
+}
 
 class IceSkeletonWalkingState extends EnemyState {
   constructor(enemy) {
@@ -737,7 +764,13 @@ export class iceSkeleton extends Enemy {
     this.deathFrameY = 1;
     this.deathMaxFrame = 5;
 
+    // Idle/sleep: single fixed frame until the player gets close.
+    this.idleFrameX = 0;
+    this.idleFrameY = 0;
+    this.wakeRange = 200; // px - distance at which it wakes and starts walking
+
     this.states = [];
+    this.states[enemyStates.ICE_SKELETON_IDLE] = new IceSkeletonIdleState(this);
     this.states[enemyStates.ICE_SKELETON_WALK] = new IceSkeletonWalkingState(
       this,
     );
@@ -745,7 +778,7 @@ export class iceSkeleton extends Enemy {
       this,
     );
 
-    this.setState(enemyStates.ICE_SKELETON_WALK);
+    this.setState(enemyStates.ICE_SKELETON_IDLE);
   }
 
   // Ice skeleton uses its own simplified hitbox.
@@ -765,6 +798,16 @@ export class iceSkeleton extends Enemy {
     this.health -= amount;
     if (this.health <= 0) {
       this.setState(enemyStates.ICE_SKELETON_DEATH);
+      return;
+    }
+
+    // Being hit always wakes it up, even from outside wakeRange.
+    if (this.currentState?.state === enemyStates.ICE_SKELETON_IDLE) {
+      const target = this.targetPlayer;
+      if (target) {
+        this.direction = target.x >= this.x ? 1 : -1;
+      }
+      this.setState(enemyStates.ICE_SKELETON_WALK);
     }
   }
 }

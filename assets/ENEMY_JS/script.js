@@ -77,14 +77,32 @@ window.addEventListener("load", function () {
   // Spawn enemies
   const enemies = [];
 
-  // Spawn enemy
+  // Maps a level's enemySpawns "type" string to an actual constructor.
   const enemySpawners = {
     icebull: () => new icebull(),
     iceSkeleton: () => new iceSkeleton(),
   };
 
+  // Actually spawn the enemies listed in the current level's config.
+  currentLevel.enemySpawns.forEach((spawn) => {
+    const spawnFn = enemySpawners[spawn.type];
+    if (!spawnFn) {
+      console.warn(
+        `[script.js] Unknown enemy type "${spawn.type}" in level config.`,
+      );
+      return;
+    }
+    const enemy = spawnFn();
+    enemy.x = spawn.x;
+    enemy.y = canvas.height - enemy.height - (player.floorOffset || 12);
+    enemy.targetPlayer = player;
+    enemy.gameWidth = window.worldWidth;
+    enemy.gameHeight = canvas.height;
+    enemies.push(enemy);
+  });
+
   // Initialize background
- background = new Background(currentLevel.background);
+  background = new Background(currentLevel.background);
 
   let lastTime = 0;
 
