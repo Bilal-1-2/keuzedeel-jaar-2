@@ -5,7 +5,7 @@ import InputHandler from "./input.js";
 import { drawStatusText, attachHealthButton } from "./utils.js";
 import { states } from "./state.js";
 import { Background } from "./background.js";
-import { Enemy, icebull } from "./enemy.js";
+import { Enemy, icebull, iceSkeleton } from "./enemy.js";
 
 let grenades = [];
 let bullets = [];
@@ -75,8 +75,9 @@ window.addEventListener("load", function () {
   const enemies = [];
 
   // Spawn enemy
-  const enemy = new icebull();
-  enemy.x = 3900;
+  const enemy = new iceSkeleton();
+
+  enemy.x = 900;
   enemy.y = canvas.height - enemy.height - (player.floorOffset || 12);
   enemy.targetPlayer = player;
   enemy.gameWidth = window.worldWidth;
@@ -125,7 +126,6 @@ window.addEventListener("load", function () {
       }
     });
   }
-
 
   function checkBulletPlayerCollisions(bullets, player) {
     bullets.forEach((bullet) => {

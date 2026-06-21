@@ -7,6 +7,10 @@ export const enemyStates = {
   IMPACT: 5,
   GET_HIT: 6,
   DEATH: 7,
+
+  // Ice skeleton specific (independent from generic Enemy WALK)
+  ICE_SKELETON_WALK: 8,
+  ICE_SKELETON_DEATH: 9,
 };
 
 class EnemyState {
@@ -71,7 +75,7 @@ class EnemyWalking extends EnemyState {
     ) {
       // Patrol turn: no pendingDirection, EnemyTurn will know to resume WALK.
       this.enemy.pendingDirection = this.enemy.direction * -1;
-      this.enemy.resumeState = enemyStates.WALK;
+      this.enemy.resumeState = enemyStates.ICE_SKELETON_WALK;
       this.enemy.setState(enemyStates.TURN);
     }
   }
@@ -182,7 +186,12 @@ class EnemyImpact extends EnemyState {
     // Apply damage once when IMPACT starts.
     const target = this.enemy.targetPlayer;
     // Check if player is not invincible
-    if (target && typeof target.health === "number" && target.health > 0 && !target.isInvincible?.()) {
+    if (
+      target &&
+      typeof target.health === "number" &&
+      target.health > 0 &&
+      !target.isInvincible?.()
+    ) {
       target.health -= 25;
       if (target.health < 0) target.health = 0;
       // Trigger the hit animation on the player
@@ -547,6 +556,10 @@ export class Enemy {
   }
 }
 
+
+
+
+
 export class icebull extends Enemy {
   constructor() {
     super();
@@ -592,4 +605,151 @@ export class icebull extends Enemy {
 
   // takeDamage() is inherited from Enemy - no need to redefine it here
   // unless icebull needs special death/hit behavior.
+}
+
+// Ice Skeleton specific states (independent enums)
+class IceSkeletonWalkingState extends EnemyState {
+  constructor(enemy) {
+    super(enemyStates.ICE_SKELETON_WALK, enemy);
+  }
+
+  enter() {
+    // Start walk animation
+    this.enemy.frameX = 0;
+    this.enemy.frameY = this.enemy.walkFrameY ?? 0;
+    this.enemy.maxFrame = this.enemy.walkMaxFrame ?? 7;
+
+    // Do not stop when player is seen; we continuously follow.
+  }
+
+  handleInput(deltaTime) {
+    // Loop walk animation
+    if (this.enemy.frameX >= this.enemy.maxFrame) {
+      this.enemy.frameX = 0;
+    }
+
+    // Follow player: move towards the player's X.
+    const target = this.enemy.targetPlayer;
+    if (!target || this.enemy.isDead) {
+      // Fallback: keep current direction walking.
+      this.enemy.speedX = this.enemy.direction * this.enemy.baseSpeedX;
+      return;
+    }
+
+    const dx = target.x - this.enemy.x;
+    const desiredDirection = dx >= 0 ? 1 : -1;
+
+    // Flip (by direction + mirror draw) and walk.
+    if (desiredDirection !== this.enemy.direction) {
+      this.enemy.direction = desiredDirection;
+    }
+
+    this.enemy.speedX = this.enemy.direction * this.enemy.baseSpeedX;
+
+    // Optional: edge handling - if you don't want falling outside the world,
+    // clamp by turning around immediately.
+    const hitLeftEdge = this.enemy.x <= 0;
+    const hitRightEdge =
+      this.enemy.x >= (window.worldWidth ?? Infinity) - this.enemy.width;
+
+    if (hitLeftEdge) {
+      this.enemy.direction = 1;
+      this.enemy.speedX = this.enemy.direction * this.enemy.baseSpeedX;
+    } else if (hitRightEdge) {
+      this.enemy.direction = -1;
+      this.enemy.speedX = this.enemy.direction * this.enemy.baseSpeedX;
+    }
+  }
+}
+
+class IceSkeletonDeathState extends EnemyState {
+  constructor(enemy) {
+    super(enemyStates.DEATH, enemy);
+  }
+
+  enter() {
+    this.enemy.speedX = 0;
+    this.enemy.isDead = true;
+    this.enemy.isAlive = false;
+
+    this.enemy.frameX = 0;
+    this.enemy.frameY = 1;
+    this.enemy.maxFrame = 5;
+
+    this.enemy._deathAnimDone = false;
+    this.enemy._deathStartMs = performance.now();
+    this.enemy._deathVanishDelayMs = 4000;
+  }
+
+  handleInput() {
+    this.enemy.speedX = 0;
+
+    if (this.enemy.frameX >= this.enemy.maxFrame) {
+      this.enemy.frameX = this.enemy.maxFrame;
+      this.enemy._deathAnimDone = true;
+    }
+
+    if (
+      this.enemy._deathAnimDone &&
+      performance.now() - this.enemy._deathStartMs >=
+        this.enemy._deathVanishDelayMs
+    ) {
+      this.enemy.isVanished = true;
+    }
+  }
+}
+
+export class iceSkeleton extends Enemy {
+  constructor() {
+    super();
+
+    // Override: transitions out of ICE skeleton WALK should resume this state.
+    this.iceWalkState = enemyStates.ICE_SKELETON_WALK;
+
+    // Render sprite size (full frame)
+    this.width = 90;
+    this.height = 73.34;
+
+    this.enemywidth = 45;
+    this.enemyheight = 73;
+
+    this.x = 1000;
+    this.y = 0;
+
+    // movement tuning
+    this.direction = -1;
+    this.baseSpeedX = 4;
+
+    this.image = document.getElementById("iceskeleton");
+
+    // enemy stats
+    this.health = 10;
+    this.maxHealth = 10;
+
+    // Ice skeleton sprite mapping defaults.
+    // Update these two rows/frames if your sprite sheet uses different values.
+    this.walkFrameY = 0;
+    this.walkMaxFrame = 7;
+    this.deathFrameY = 1;
+    this.deathMaxFrame = 5;
+
+    // set up enemy states (must use numeric enums)
+    this.states = [];
+    this.states[enemyStates.ICE_SKELETON_WALK] = new IceSkeletonWalkingState(
+      this,
+    );
+    this.states[enemyStates.ICE_SKELETON_DEATH] = new IceSkeletonDeathState(
+      this,
+    );
+
+    // Start in the ice skeleton's own WALK state
+    this.setState(enemyStates.ICE_SKELETON_WALK);
+  }
+  takeDamage(amount = 1) {
+    if (this.isDead) return;
+    this.health -= amount;
+    if (this.health <= 0) {
+      this.setState(enemyStates.ICE_SKELETON_DEATH);
+    }
+  }
 }
