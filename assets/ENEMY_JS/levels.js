@@ -28,7 +28,7 @@ export const levels = {
   // Example second level - swap in different <img> elements/ids in your
   // HTML (e.g. layer1_cave, layer2_cave, ...) and reference them here.
   winter2: {
-    worldWidth: 4000,
+    worldWidth: 7000,
     background: {
       width: 1667,
       height: 786,
@@ -41,6 +41,10 @@ export const levels = {
     enemySpawns: [
       { type: "iceSkeleton", x: 1200 },
       { type: "iceSkeleton", x: 2400 },
+      { type: "icebull", x: 3700 },
+      { type: "iceSkeleton", x: 3400 },
+      { type: "icebull", x: 5600 },
+      { type: "iceSkeleton", x: 6400 },
     ],
   },
 };

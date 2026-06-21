@@ -478,6 +478,10 @@ export class Enemy {
   }
 
   drawHealthBar(ctx) {
+    // Hide healthbar for enemies that have a dedicated idle/asleep state.
+    // (e.g. ice skeleton while sleeping)
+    if (this.currentState?.state === enemyStates.ICE_SKELETON_IDLE) return;
+
     if (this.maxHealth <= 0) return;
 
     const barWidth = Math.max(this.width, 60);
@@ -515,7 +519,7 @@ export class Enemy {
     if (!ctx || !this.image) return;
 
     const box = this.getHitbox();
-    ctx.strokeStyle = "#00ff0000";
+    ctx.strokeStyle = "#00ff00";
     ctx.strokeRect(
       box.left,
       box.top,
@@ -606,9 +610,11 @@ class IceSkeletonIdleState extends EnemyState {
   enter() {
     this.enemy.speedX = 0;
     // Single, fixed frame - no animation while idle/asleep.
-    this.enemy.frameX =  0;
-    this.enemy.frameY =  2;
+    this.enemy.frameX = 0;
+    this.enemy.frameY = 2;
     this.enemy.maxFrame = 0; // stays put, no advance
+        this.enemy.enemywidth = 0;
+    this.enemy.enemyheight = 0;
   }
 
   handleInput() {
@@ -637,6 +643,8 @@ class IceSkeletonWalkingState extends EnemyState {
     this.enemy.frameX = 0;
     this.enemy.frameY = this.enemy.walkFrameY ?? 0;
     this.enemy.maxFrame = this.enemy.walkMaxFrame ?? 7;
+    this.enemy.enemywidth = 45;
+    this.enemy.enemyheight = 80;
   }
 
   handleInput(deltaTime) {
@@ -745,8 +753,7 @@ export class iceSkeleton extends Enemy {
     this.width = 90;
     this.height = 80;
 
-    this.iceSkeletonenemywidth = 45;
-    this.iceSkeletonenemyheight = 80;
+
 
     this.x = 1000;
     this.y = 0;
@@ -785,11 +792,11 @@ export class iceSkeleton extends Enemy {
   getHitbox() {
     return {
       left:
-        this.x + this.iceSkeletonenemywidth / (this.direction > 0 ? 1.8 : 3.55),
+        this.x + this.enemywidth / (this.direction > 0 ? 1.8 : 3.55),
       right:
-        this.x + this.iceSkeletonenemywidth * (this.direction > 0 ? 1.8 : 1.4),
+        this.x + this.enemywidth * (this.direction > 0 ? 1.8 : 1.4),
       top: this.y + 20,
-      bottom: this.y + this.iceSkeletonenemyheight,
+      bottom: this.y + this.enemyheight,
     };
   }
 
