@@ -229,6 +229,8 @@ class EnemyImpact extends EnemyState {
     if (this.enemy.frameX >= this.enemy.maxFrame) {
       if (this.enemy._impactToIdleStartMs === undefined) {
         this.enemy._impactToIdleStartMs = performance.now();
+        // If this is an ice skeleton, return to its sleep/idle.
+        // Otherwise return to generic idle.
         this.enemy.setState(enemyStates.IDLE);
       } else {
         const elapsedMs = performance.now() - this.enemy._impactToIdleStartMs;
@@ -613,7 +615,7 @@ class IceSkeletonIdleState extends EnemyState {
     this.enemy.frameX = 0;
     this.enemy.frameY = 2;
     this.enemy.maxFrame = 0; // stays put, no advance
-        this.enemy.enemywidth = 0;
+    this.enemy.enemywidth = 0;
     this.enemy.enemyheight = 0;
   }
 
@@ -688,6 +690,31 @@ class IceSkeletonWalkingState extends EnemyState {
       this.enemy.direction = -1;
       this.enemy.speedX = this.enemy.direction * this.enemy.baseSpeedX;
     }
+
+    if (isTouching) {
+      const target = this.enemy.targetPlayer;
+      const now = performance.now();
+
+      const touchCooldownMs = 450;
+      this.enemy._lastSkeletonTouchDamageAt ??= 0;
+
+      if (
+        target &&
+        typeof target.health === "number" &&
+        target.health > 0 &&
+        !target.isInvincible?.() &&
+        now - this.enemy._lastSkeletonTouchDamageAt >= touchCooldownMs
+      ) {
+        target.health -= 10;
+        if (target.health < 0) target.health = 0;
+        target._pendingGetHitAnim = true;
+        this.enemy._lastSkeletonTouchDamageAt = now;
+
+        if (target.health <= 0) {
+          console.log("Player should die from skeleton touch");
+        }
+      }
+    }
   }
 }
 
@@ -753,8 +780,6 @@ export class iceSkeleton extends Enemy {
     this.width = 90;
     this.height = 80;
 
-
-
     this.x = 1000;
     this.y = 0;
 
@@ -791,10 +816,8 @@ export class iceSkeleton extends Enemy {
   // Ice skeleton uses its own simplified hitbox.
   getHitbox() {
     return {
-      left:
-        this.x + this.enemywidth / (this.direction > 0 ? 1.8 : 3.55),
-      right:
-        this.x + this.enemywidth * (this.direction > 0 ? 1.8 : 1.4),
+      left: this.x + this.enemywidth / (this.direction > 0 ? 1.8 : 3.55),
+      right: this.x + this.enemywidth * (this.direction > 0 ? 1.8 : 1.4),
       top: this.y + 20,
       bottom: this.y + this.enemyheight,
     };
