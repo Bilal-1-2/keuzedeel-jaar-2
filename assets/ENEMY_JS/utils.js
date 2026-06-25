@@ -38,8 +38,7 @@ export function drawHealthHUD(context, player) {
   context.fillRect(x, y, barWidth, barHeight);
 
   // Filled portion - color shifts as health drops
-  context.fillStyle =
-    pct > 0.5 ? "#4caf50" : pct > 0.2 ? "#ffb300" : "#e53935";
+  context.fillStyle = pct > 0.5 ? "#4caf50" : pct > 0.2 ? "#ffb300" : "#e53935";
   context.fillRect(x, y, barWidth * pct, barHeight);
 
   // Border
@@ -62,12 +61,20 @@ export function drawHealthHUD(context, player) {
 }
 
 export function drawStatusText(context, input, player, deltaTime, grenades) {
-  // Default to enabled
-  drawStatusText.debugOn ??= true;
-  // Toggle debug with 'd'
+  // Default to disabled (hidden) until user toggles.
+  drawStatusText.debugOn ??= false;
+
+  // Toggle debug with the 'd' key
   if (input.lastKey === "PRESS d") {
     drawStatusText.debugOn = !drawStatusText.debugOn;
   }
+
+  // Also toggle debug overlays with the "e" key
+  // (user request: show debug/hitboxes when pressing a button/key)
+  if (input.lastKey === "PRESS e") {
+    drawStatusText.debugOn = !drawStatusText.debugOn;
+  }
+
   if (!drawStatusText.debugOn) return;
 
   // Grenade array default if not provided

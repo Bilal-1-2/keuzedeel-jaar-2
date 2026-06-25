@@ -7,6 +7,7 @@ import { states } from "./state.js";
 import { Background } from "./background.js";
 import { getLevel } from "./levels.js";
 import { Enemy, icebull, iceSkeleton } from "./enemy.js";
+import { SoundManager } from "./sounds.js";
 
 let grenades = [];
 let bullets = [];
@@ -16,7 +17,7 @@ let background;
 let cameraX = 0;
 let cameraY = 0;
 
-// SCREEN EDGE THRESHOLDS (20% from edges)
+
 const edgeThreshold = 0.5;
 const leftEdge = edgeThreshold;
 const rightEdge = 1 - edgeThreshold;
@@ -155,6 +156,8 @@ function checkBulletPlayerCollisions(bullets, player) {
 function checkGrenadeEnemyCollisions(grenades, enemies) {
   grenades.forEach((grenade) => {
     if (!grenade.hasExploded || grenade._damageApplied) return;
+
+    SoundManager.play("explosion");
 
     enemies.forEach((enemy) => {
       if (enemy.isDead) return;
@@ -314,6 +317,7 @@ export function startGame(levelKey) {
     animationFrameId = null;
   }
 
+  SoundManager.init(); // unlock AudioContext on first user click
   hideVictoryOverlay();
   setupGame(levelKey);
 
@@ -396,6 +400,7 @@ function showVictoryOverlay() {
       nextLevelKey ? "All enemies defeated. Ready for the next?" : "All enemies defeated. You finished the last level!";
   }
 
+  SoundManager.play("victory");
   overlay.classList.remove("hidden");
 }
 

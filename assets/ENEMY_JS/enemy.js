@@ -1,3 +1,5 @@
+import { SoundManager } from "./sounds.js";
+
 export const enemyStates = {
   IDLE: 0,
   WALK: 1,
@@ -123,6 +125,7 @@ class EnemyAnticipation extends EnemyState {
     this.enemy.frameX = 0;
     this.enemy.frameY = 3;
     this.enemy.maxFrame = 7;
+    SoundManager.play("enemy_anticipation");
     // TODO: set correct maxFrame/fps/row for ANTICIPATION.
   }
 
@@ -146,6 +149,7 @@ class EnemyCharge extends EnemyState {
     this.enemy.maxFrame = 6;
     // Reset the "last seen" clock whenever we (re)start a charge.
     this.enemy._lastSeenPlayerAt = performance.now();
+    SoundManager.play("enemy_charge");
   }
 
   handleInput() {
@@ -206,6 +210,7 @@ class EnemyImpact extends EnemyState {
     this.enemy.frameX = 0;
     this.enemy.frameY = 5;
     this.enemy.maxFrame = 5;
+    SoundManager.play("enemy_impact");
 
     // Apply damage once when IMPACT starts.
     const target = this.enemy.targetPlayer;
@@ -391,7 +396,9 @@ export class Enemy {
 
     if (this.health <= 0) {
       this.setState(enemyStates.DEATH);
+      SoundManager.play("enemy_death");
     } else {
+      SoundManager.play("enemy_hit");
       this.resumeState = this.currentState?.state ?? enemyStates.IDLE;
       this.setState(enemyStates.GET_HIT);
     }
@@ -586,8 +593,8 @@ export class icebull extends Enemy {
 
     this.image = document.getElementById("icebull");
 
-    this.health = 50;
-    this.maxHealth = 50;
+    this.health = 100;
+    this.maxHealth = 100;
 
     this.states = [
       new EnemyIdle(this), // IDLE
@@ -828,8 +835,10 @@ export class iceSkeleton extends Enemy {
     this.health -= amount;
     if (this.health <= 0) {
       this.setState(enemyStates.ICE_SKELETON_DEATH);
+      SoundManager.play("enemy_death");
       return;
     }
+    SoundManager.play("enemy_hit");
 
     // Being hit always wakes it up, even from outside wakeRange.
     if (this.currentState?.state === enemyStates.ICE_SKELETON_IDLE) {

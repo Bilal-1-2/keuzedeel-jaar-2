@@ -7,9 +7,11 @@ import {
   ThrowingGrenade,
   Shooting,
   Melee,
+  Gethit,
   Dead,
   states,
 } from "./state.js";
+import { SoundManager } from "./sounds.js";
 
 export default class Player {
   constructor(gameWidth, gameHeight, spawnGrenade, spawnBullet) {
@@ -25,6 +27,7 @@ export default class Player {
       new Shooting(this), // 6
       new Melee(this), // 7
       new Dead(this), // 8
+      new Gethit(this), // 9
     ];
     this.currentState = this.states[0];
     // this.previousState = states.STANDING;
@@ -198,6 +201,7 @@ export default class Player {
 
   // In player.js, update the update() method:
   update(input) {
+    const wasOnGround = this.onGround();
     this.currentState.handleInput(input);
     this.x += this.speed;
 
@@ -215,9 +219,32 @@ export default class Player {
     const groundY = this.gameHeight - this.height - this.floorOffset;
     if (this.y >= groundY) this.y = groundY;
 
+    // Land sound: was airborne, now on ground
+    if (!wasOnGround && this.onGround()) {
+      SoundManager.play("land");
+    }
+
+    // Footstep sounds: triggered on specific animation frames while moving
+    const stateName = this.currentState.state;
+    if (stateName === "RUNNING" && this.frameX % 2 === 0 && this._lastFootstepFrame !== this.frameX) {
+      SoundManager.play("footstepRun");
+      this._lastFootstepFrame = this.frameX;
+    } else if (stateName === "WALKING" && this.frameX % 3 === 0 && this._lastFootstepFrame !== this.frameX) {
+      SoundManager.play("footstepWalk");
+      this._lastFootstepFrame = this.frameX;
+    } else if (stateName !== "RUNNING" && stateName !== "WALKING") {
+      this._lastFootstepFrame = -1;
+    }
+
     if (this.health <= 0 && !this.isDead) {
       console.log("Dead anim 4");
       this.setState(states.DEAD);
+    } else if (this._pendingGetHitAnim && !this.isDead) {
+      this._pendingGetHitAnim = false;
+      this.previousState = this.currentState.state !== "GETHIT"
+        ? this.states.indexOf(this.currentState)
+        : (this.previousState ?? states.STANDING);
+      this.setState(states.GETHIT);
     }
   }
   getHitbox() {
@@ -242,6 +269,10 @@ export default class Player {
       boxA.top < boxB.bottom &&
       boxA.bottom > boxB.top
     );
+  }
+
+  isInvincible() {
+    return this.currentState?.state === "GETHIT" || this.isDead;
   }
 
   setState(state) {

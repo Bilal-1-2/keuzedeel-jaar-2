@@ -1,3 +1,5 @@
+import { SoundManager } from "./sounds.js";
+
 export const states = {
   STANDING: 0,
   RELOADING: 1,
@@ -76,6 +78,7 @@ export class Reloading extends State {
     this.player.maxFrames = 12;
     this.player.playerwidth = 22;
     this.player.playerheight = 67;
+    SoundManager.play("reload");
   }
 
   handleInput(input) {
@@ -204,6 +207,7 @@ export class Jumping extends State {
   enter() {
     if (this.player.onGround()) {
       this.player.vy = -10.3;
+      SoundManager.play("jump");
     }
   }
 
@@ -348,6 +352,7 @@ export class ThrowingGrenade extends State {
       );
       this.player.hasThrown = true;
       this.player.grenades = this.player.grenades - 1;
+      SoundManager.play("grenade_throw");
     }
 
     if (this.player.health <= 0 && this.player.previousState !== states.DEAD) {
@@ -411,6 +416,7 @@ export class Shooting extends State {
       );
       this.player.hasShot = true;
       this.player.magazine = this.player.magazine - 1;
+      SoundManager.play("shoot");
     }
 
     if (input.keys.click === false) {
@@ -459,6 +465,7 @@ export class Melee extends State {
     // below in handleInput() once frameX reaches the "strike" frame.
     this.player._meleeHitActive = false;
     this.player._meleeHitApplied = false;
+    SoundManager.play("melee");
   }
 
   handleInput(input) {
@@ -512,6 +519,7 @@ export class Gethit extends State {
     this.player.maxFrames = 2;
     this.player.speed = 0;
     this.player.vy = 0;
+    SoundManager.play("player_hit");
   }
 
   handleInput(input) {
@@ -557,6 +565,7 @@ export class Dead extends State {
     this.player.speed = 0;
     this.player.vy = 0;
     this.deathTimer = 0;
+    SoundManager.play("player_death");
 
     // Let the death animation actually play before kicking the player
     // back to the level-select menu. ~1.2s is generous for a few
