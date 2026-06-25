@@ -1,5 +1,21 @@
 import { listLevels } from "./levels.js";
 
+// Shown again whenever the player dies (see showMenu(), wired to
+// window so script.js/state.js can call it without importing this
+// module directly).
+function showMenu(message) {
+  const overlay = document.getElementById("menuOverlay");
+  if (!overlay) return;
+
+  const subtitle = document.querySelector("#menuOverlay .subtitle");
+  if (subtitle) {
+    subtitle.textContent = message || "Choose where to drop in.";
+  }
+
+  overlay.classList.remove("hidden");
+}
+window.showMenu = showMenu;
+
 function buildMenu() {
   const levelList = document.getElementById("levelList");
   const overlay = document.getElementById("menuOverlay");

@@ -557,6 +557,21 @@ export class Dead extends State {
     this.player.speed = 0;
     this.player.vy = 0;
     this.deathTimer = 0;
+
+    // Let the death animation actually play before kicking the player
+    // back to the level-select menu. ~1.2s is generous for a few
+    // frames at this state's animation speed; tweak if your death
+    // sprite is longer/shorter.
+    const returnDelayMs = 1200;
+    setTimeout(() => {
+      if (typeof window.returnToMenu === "function") {
+        window.returnToMenu();
+      } else {
+        console.warn(
+          "[state.js] window.returnToMenu is not defined - is script.js loaded?",
+        );
+      }
+    }, returnDelayMs);
   }
 
   handleInput(input) {

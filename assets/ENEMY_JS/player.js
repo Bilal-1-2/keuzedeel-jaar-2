@@ -60,6 +60,7 @@ export default class Player {
     // player stats
     this.magazine = 30;
     this.health = 100;
+    this.maxHealth = 100;
     this.isDead = false;
     this.isAlive = true;
     this.grenades = 5;
@@ -102,7 +103,7 @@ export default class Player {
         (this.width - this.playerwidth - 20) / 2 +
         this.playerwidth / 2;
 
-    const cy = this.y - 12;
+    const cy = this.y + 40;
 
     context.fillStyle = "rgba(0,0,0,0.5)";
     context.fillRect(cx - barMaxWidth / 2, cy, barMaxWidth, barHeight);
@@ -121,7 +122,7 @@ export default class Player {
     this.drawHealthBar(context);
 
     // Hitbox debug (actual character size)
-    context.strokeStyle = "#ff0000";
+    context.strokeStyle = "#ff000000";
 
     // Place hitbox on the bottom of the sprite (not centered vertically)
     context.strokeRect(

@@ -2,7 +2,7 @@ import Player from "./player.js";
 import Grenade from "./grenade.js";
 import Bullet from "./bullets.js";
 import InputHandler from "./input.js";
-import { drawStatusText, attachHealthButton } from "./utils.js";
+import { drawStatusText, attachHealthButton, drawHealthHUD } from "./utils.js";
 import { states } from "./state.js";
 import { Background } from "./background.js";
 import { getLevel } from "./levels.js";
@@ -267,6 +267,7 @@ function animate(timeStamp, lastTimeRef) {
     ctx.restore();
   });
 
+  drawHealthHUD(ctx, player);
   drawStatusText(ctx, input, player, deltaTime, grenades, bullets);
 
   if (drawStatusText.debugOn) {
@@ -307,6 +308,26 @@ export function startGame(levelKey) {
   animate(0, lastTimeRef);
 }
 
+// Stops the game loop and brings the level-select menu back up. Called
+// from state.js (with a short delay, so the death animation gets to
+// play first) once the player has died.
+export function returnToMenu() {
+  if (animationFrameId !== null) {
+    cancelAnimationFrame(animationFrameId);
+    animationFrameId = null;
+  }
+
+  if (typeof window.showMenu === "function") {
+    window.showMenu("You died. Choose a level to try again.");
+  } else {
+    console.warn(
+      "[script.js] window.showMenu is not defined - is menu.js loaded?",
+    );
+  }
+}
+
 // Expose globally too, since the menu's button onclick is simplest as
-// plain inline JS / non-module script.
+// plain inline JS / non-module script, and state.js calls this without
+// importing script.js as a module.
 window.startGame = startGame;
+window.returnToMenu = returnToMenu;

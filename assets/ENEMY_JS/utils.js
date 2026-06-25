@@ -13,6 +13,54 @@ export function attachHealthButton(player) {
   });
 }
 
+// Fixed HUD health bar, drawn in screen space (no camera translate),
+// so it stays put in the corner and is always readable - unlike the
+// small bar that floats above the player's head in player.js, this
+// one never scrolls offscreen or gets covered by enemies/sprites.
+export function drawHealthHUD(context, player) {
+  if (!player || typeof player.health !== "number") return;
+
+  const maxHealth =
+    typeof player.maxHealth === "number" && player.maxHealth > 0
+      ? player.maxHealth
+      : 100;
+
+  const barWidth = 220;
+  const barHeight = 22;
+  const x = context.canvas.width - barWidth - 16;
+  const y = 16;
+  const pct = Math.max(0, Math.min(1, player.health / maxHealth));
+
+  context.save();
+
+  // Background / empty portion
+  context.fillStyle = "rgba(0,0,0,0.55)";
+  context.fillRect(x, y, barWidth, barHeight);
+
+  // Filled portion - color shifts as health drops
+  context.fillStyle =
+    pct > 0.5 ? "#4caf50" : pct > 0.2 ? "#ffb300" : "#e53935";
+  context.fillRect(x, y, barWidth * pct, barHeight);
+
+  // Border
+  context.strokeStyle = "#0a0e14";
+  context.lineWidth = 2;
+  context.strokeRect(x, y, barWidth, barHeight);
+
+  // Label - current / max health
+  context.font = "bold 13px Arial";
+  context.fillStyle = "white";
+  context.textBaseline = "middle";
+  context.textAlign = "center";
+  context.fillText(
+    `${Math.max(0, Math.round(player.health))} / ${maxHealth}`,
+    x + barWidth / 2,
+    y + barHeight / 2 + 1,
+  );
+
+  context.restore();
+}
+
 export function drawStatusText(context, input, player, deltaTime, grenades) {
   // Default to enabled
   drawStatusText.debugOn ??= true;
