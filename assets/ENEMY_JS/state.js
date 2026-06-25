@@ -33,7 +33,6 @@ export class Standing extends State {
   }
 
   handleInput(input) {
-    // PRESS events (one-time)
     if (this.player.health <= 0 && this.player.previousState !== states.DEAD) {
       console.log("Dead anim: 2");
       this.player.setState(states.DEAD);
@@ -45,16 +44,7 @@ export class Standing extends State {
     } else if (input.lastKey === "PRESS E") {
       this.player.previousState = states.STANDING;
       this.player.setState(states.MELEE);
-    }
-
-    // else if (input.lastKey === "PRESS right") {
-    //   this.player.flip = false;
-    //   this.player.setState(states.WALKING);
-    // } else if (input.lastKey === "PRESS left") {
-    //   this.player.flip = true;
-    //   this.player.setState(states.WALKING);
-    // }
-    else if (input.lastKey === "PRESS reload" && this.player.magazine < 30) {
+    } else if (input.lastKey === "PRESS reload" && this.player.magazine < 30) {
       this.player.setState(states.RELOADING);
     } else if (input.lastKey === "PRESS G" && this.player.grenades > 0) {
       this.player.frameX = 0;
@@ -63,7 +53,6 @@ export class Standing extends State {
       this.player.previousState = states.STANDING;
       this.player.setState(states.SHOOTING);
     }
-    // HELD state transitions (every frame)
     if (input.keys.right || input.keys.left) {
       this.player.setState(states.WALKING);
     } else if (input.keys.down) {
@@ -92,13 +81,9 @@ export class Reloading extends State {
   handleInput(input) {
     if (this.player.magazine >= 30) {
       this.player.magazine = 30;
-      // stop reload state immediately
       this.player.speed = 0;
       this.player.frameX = 1;
 
-      // IMPORTANT: reload should end back to a MOVEMENT/IDLE state,
-      // not back to RELOADING or into a state that immediately restarts.
-      // Use current input to decide.
       if (input.keys.right || input.keys.left) {
         this.player.setState(states.RUNNING);
       } else if (input.keys.down) {
@@ -109,9 +94,6 @@ export class Reloading extends State {
       return;
     } else {
       this.player.speed = 0;
-      // Animation complete
-
-      // Movement during reload
 
       if (input.keys.right) {
         this.player.flip = false;
@@ -130,15 +112,7 @@ export class Reloading extends State {
 
       if (input.lastKey === "PRESS up" && this.player.onGround()) {
         this.player.setState(states.JUMPING);
-      }
-      // else if (
-      //   input.keys.click === true &&
-      //   this.player.frameX >= this.player.maxFrames
-      // ) {
-      //   this.player.previousState = states.STANDING;
-      //   this.player.setState(states.SHOOTING);
-      // }
-      else if (input.lastKey === "PRESS E") {
+      } else if (input.lastKey === "PRESS E") {
         this.player.setState(states.MELEE);
       }
       if (this.player.frameX >= this.player.maxFrames) {
@@ -172,7 +146,6 @@ export class Running extends State {
   }
 
   handleInput(input) {
-    // PRESS events - check these FIRST
     if (this.player.health <= 0 && this.player.previousState !== states.DEAD) {
       this.player.setState(states.DEAD);
       console.log("Dead anim: 4");
@@ -196,16 +169,16 @@ export class Running extends State {
       this.player.setState(states.THROWINGGRENADE);
       return;
     } else if (input.lastKey === "PRESS E") {
+      this.player.previousState = states.RUNNING;
       this.player.setState(states.MELEE);
+      return;
     }
 
-    // Walk mode toggle
     if (input.toggles.walkMode) {
       this.player.setState(states.WALKING);
       return;
     }
 
-    // HELD logic (only if no PRESS action was taken)
     if (input.keys.right) {
       this.player.flip = false;
       this.player.speed = this.player.maxSpeed;
@@ -235,7 +208,6 @@ export class Jumping extends State {
   }
 
   handleInput(input) {
-    // Air control
     if (input.keys.right) {
       this.player.flip = false;
       this.player.speed = Math.min(
@@ -252,7 +224,6 @@ export class Jumping extends State {
       this.player.speed *= 0.9;
     }
 
-    // Landing
     if (this.player.health <= 0 && this.player.previousState !== states.DEAD) {
       this.player.setState(states.DEAD);
       console.log("Dead anim: 5");
@@ -291,7 +262,6 @@ export class Walking extends State {
   }
 
   handleInput(input) {
-    // PRESS events - check these FIRST
     if (this.player.health <= 0 && this.player.previousState !== states.DEAD) {
       this.player.setState(states.DEAD);
       console.log("Dead anim: 6");
@@ -304,12 +274,12 @@ export class Walking extends State {
       this.player.speed = 0;
       this.player.frameX = 0;
       this.player.setState(states.THROWINGGRENADE);
-      return; // Stop here, don't process movement
+      return;
     } else if (input.lastKey === "PRESS CLICK") {
       this.player.speed = 0;
       this.player.previousState = states.WALKING;
       this.player.setState(states.SHOOTING);
-      return; // Stop here, don't process movement
+      return;
     } else if (input.lastKey === "PRESS up" && this.player.onGround()) {
       this.player.previousState = states.WALKING;
       this.player.setState(states.JUMPING);
@@ -320,13 +290,11 @@ export class Walking extends State {
       return;
     }
 
-    // Toggle between RUNNING and WALKING
     if (!input.toggles.walkMode) {
       this.player.setState(states.RUNNING);
       return;
     }
 
-    // HELD logic (only if no PRESS action was taken)
     if (input.keys.right) {
       this.player.flip = false;
       this.player.speed = this.player.maxSpeed * 0.5;
@@ -342,6 +310,7 @@ export class Walking extends State {
     }
   }
 }
+
 export class ThrowingGrenade extends State {
   constructor(player) {
     super("THROWING GRANADE");
@@ -357,7 +326,6 @@ export class ThrowingGrenade extends State {
   }
 
   handleInput(input) {
-    // Movement during throw - ALLOW movement without breaking animation
     if (input.keys.right) {
       this.player.flip = false;
       this.player.speed = 2;
@@ -368,7 +336,6 @@ export class ThrowingGrenade extends State {
       this.player.speed = 0;
     }
 
-    // Spawn grenade at correct frame
     if (
       this.player.spawnGrenade &&
       !this.player.hasThrown &&
@@ -383,7 +350,6 @@ export class ThrowingGrenade extends State {
       this.player.grenades = this.player.grenades - 1;
     }
 
-    // ONLY jump can break/cancel the throw animation
     if (this.player.health <= 0 && this.player.previousState !== states.DEAD) {
       this.player.setState(states.DEAD);
       console.log("Dead anim: 7");
@@ -395,7 +361,6 @@ export class ThrowingGrenade extends State {
       return;
     }
 
-    // Animation complete - exit normally
     if (this.player.frameX >= this.player.maxFrames) {
       this.player.frameX = 1;
       this.player.setState(this.player.previousState || states.STANDING);
@@ -426,7 +391,6 @@ export class Shooting extends State {
       console.log("Dead anim: 8");
     }
 
-    // Movement during shooting
     if (input.keys.right) {
       this.player.flip = false;
       this.player.speed = 1;
@@ -435,7 +399,6 @@ export class Shooting extends State {
       this.player.speed = -1;
     }
 
-    // Spawn bullet at correct frame
     if (
       this.player.spawnBullet &&
       !this.player.hasShot &&
@@ -450,20 +413,17 @@ export class Shooting extends State {
       this.player.magazine = this.player.magazine - 1;
     }
 
-    // Stop shooting when click released
     if (input.keys.click === false) {
       this.player.setState(this.player.previousState || states.STANDING);
       return;
     }
 
-    // Out of ammo
     if (this.player.magazine <= 0) {
       if (this.player.magazine < 30) {
         this.player.setState(states.RELOADING);
       }
     }
 
-    // PRESS events
     if (input.lastKey === "PRESS up" && this.player.onGround()) {
       this.player.setState(states.JUMPING);
       return;
@@ -486,6 +446,7 @@ export class Melee extends State {
     super("MELEE");
     this.player = player;
   }
+
   enter() {
     // Slow down melee animation only.
     this.player.frameX = 0;
@@ -493,7 +454,13 @@ export class Melee extends State {
     this.player.maxFrames = 2;
     this.player.playerwidth = 32;
     this.player.playerheight = 67;
+
+    // Reset hit-tracking for this swing. The damaging frame is set
+    // below in handleInput() once frameX reaches the "strike" frame.
+    this.player._meleeHitActive = false;
+    this.player._meleeHitApplied = false;
   }
+
   handleInput(input) {
     this.player.speed = 0;
 
@@ -511,7 +478,17 @@ export class Melee extends State {
       this.player.speed = -1;
     }
 
+    // Activate the damage hitbox on the swing's "strike" frame.
+    // With maxFrames = 2, frame 1 is the midpoint of the swing - the
+    // moment the weapon would actually connect.
+    if (this.player.frameX === 1) {
+      this.player._meleeHitActive = true;
+    } else {
+      this.player._meleeHitActive = false;
+    }
+
     if (this.player.frameX >= this.player.maxFrames) {
+      this.player._meleeHitActive = false;
       if (input.keys.click === true) {
         this.player.setState(states.SHOOTING);
       } else {
@@ -530,9 +507,6 @@ export class Gethit extends State {
   }
 
   enter() {
-    // Other state transitions during the animation shouldn't change this.
-    const prev = this.player.previousState;
-
     this.player.frameX = 0;
     this.player.frameY = 9;
     this.player.maxFrames = 2;
@@ -541,17 +515,14 @@ export class Gethit extends State {
   }
 
   handleInput(input) {
-    // Keep player frozen during hit animation
     this.player.speed = 0;
     this.player.vy = 0;
 
-    // Death takes priority
     if (this.player.health <= 0) {
       this.player.setState(states.DEAD);
       return;
     }
 
-    // Check if animation is complete
     if (this.player.frameX >= this.player.maxFrames) {
       if (
         input.keys.click === true &&
@@ -559,9 +530,7 @@ export class Gethit extends State {
       ) {
         this.player.previousState = states.STANDING;
         this.player.setState(states.SHOOTING);
-      }
-
-      else {
+      } else {
         this.player.setState(this.player.previousState || states.STANDING);
         return;
       }
@@ -591,7 +560,6 @@ export class Dead extends State {
   }
 
   handleInput(input) {
-    // Dead is final - lock movement only.
     this.player.speed = 0;
     this.player.vy = 0;
     return;

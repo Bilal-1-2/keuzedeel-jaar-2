@@ -695,7 +695,7 @@ class IceSkeletonWalkingState extends EnemyState {
       const target = this.enemy.targetPlayer;
       const now = performance.now();
 
-      const touchCooldownMs = 450;
+      const touchCooldownMs = 1000;
       this.enemy._lastSkeletonTouchDamageAt ??= 0;
 
       if (
@@ -784,7 +784,7 @@ export class iceSkeleton extends Enemy {
     this.y = 0;
 
     this.direction = -1;
-    this.baseSpeedX = 4;
+    this.baseSpeedX = 2;
 
     this.image = document.getElementById("iceskeleton");
 

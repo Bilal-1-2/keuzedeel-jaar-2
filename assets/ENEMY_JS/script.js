@@ -16,12 +16,6 @@ let background;
 let cameraX = 0;
 let cameraY = 0;
 
-// WORLD BOUNDARIES
-const currentLevelKey = "winter2";
-const currentLevel = getLevel(currentLevelKey);
-
-window.worldWidth = currentLevel.worldWidth;
-
 // SCREEN EDGE THRESHOLDS (20% from edges)
 const edgeThreshold = 0.5;
 const leftEdge = edgeThreshold;
@@ -30,14 +24,24 @@ const rightEdge = 1 - edgeThreshold;
 // game object (kept for compatibility)
 const game = { speed: 0 };
 
-window.addEventListener("load", function () {
-  const loading = document.getElementById("loading");
-  if (loading) loading.style.display = "none";
+// Set once startGame() runs - everything below depends on a level
+// having been chosen from the menu first.
+let canvas, ctx, player, input, enemies, currentLevel;
+let animationFrameId = null;
 
-  const canvas = document.getElementById("canvas1");
-  const ctx = canvas.getContext("2d");
+function setupGame(levelKey) {
+  currentLevel = getLevel(levelKey);
+  window.worldWidth = currentLevel.worldWidth;
+
+  canvas = document.getElementById("canvas1");
+  ctx = canvas.getContext("2d");
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
+
+  grenades = [];
+  bullets = [];
+  cameraX = 0;
+  cameraY = 0;
 
   const spawnGrenade = (spawnX, spawnY, facingRight) => {
     const g = new Grenade(
@@ -47,7 +51,6 @@ window.addEventListener("load", function () {
       canvas.width,
       canvas.height,
     );
-    // Match the player's “lifted from bottom” feel
     g.floorOffset = player.floorOffset;
     grenades.push(g);
   };
@@ -58,32 +61,22 @@ window.addEventListener("load", function () {
     );
   };
 
-  const player = new Player(
-    canvas.width,
-    canvas.height,
-    spawnGrenade,
-    spawnBullet,
-  );
+  player = new Player(canvas.width, canvas.height, spawnGrenade, spawnBullet);
 
-  // Start player: hitbox centered, and sits on the bottom of the screen
-  // (player.nx/y are used for both sprite drawing and hitbox debug)
   player.x = (player.width - player.playerwidth) / 2;
   player.y = canvas.height - player.playerheight - player.floorOffset;
 
   attachHealthButton(player);
 
-  const input = new InputHandler();
+  input = new InputHandler();
 
-  // Spawn enemies
-  const enemies = [];
+  enemies = [];
 
-  // Maps a level's enemySpawns "type" string to an actual constructor.
   const enemySpawners = {
     icebull: () => new icebull(),
     iceSkeleton: () => new iceSkeleton(),
   };
 
-  // Actually spawn the enemies listed in the current level's config.
   currentLevel.enemySpawns.forEach((spawn) => {
     const spawnFn = enemySpawners[spawn.type];
     if (!spawnFn) {
@@ -101,192 +94,219 @@ window.addEventListener("load", function () {
     enemies.push(enemy);
   });
 
-  // Initialize background
   background = new Background(currentLevel.background);
+}
 
-  let lastTime = 0;
+function updateCamera() {
+  const playerScreenX = player.x - cameraX;
+  const leftBoundary = canvas.width * leftEdge;
+  const rightBoundary = canvas.width * rightEdge;
 
-  function updateCamera() {
-    // Calculate where the player appears on screen
-    const playerScreenX = player.x - cameraX;
-
-    // Define screen boundaries (20% from edges)
-    const leftBoundary = canvas.width * leftEdge;
-    const rightBoundary = canvas.width * rightEdge;
-
-    // Move camera when player gets close to edges
-    if (playerScreenX < leftBoundary) {
-      cameraX = player.x - leftBoundary;
-    } else if (playerScreenX > rightBoundary) {
-      cameraX = player.x - rightBoundary;
-    }
-
-    // Keep camera within world boundaries
-    cameraX = Math.max(0, Math.min(cameraX, window.worldWidth - canvas.width));
-  }
-  function checkBulletEnemyCollisions(bullets, enemies) {
-    bullets.forEach((bullet) => {
-      if (!bullet.exists) return; // already dead/hit this frame
-
-      const bulletBox = bullet.getHitbox();
-
-      for (const enemy of enemies) {
-        if (enemy.isDead) continue;
-
-        const enemyBox = enemy.getHitbox();
-
-        if (bullet.hitboxesOverlap(bulletBox, enemyBox)) {
-          enemy.takeDamage(1); // or however much a bullet should do
-          bullet.exists = false; // consume the bullet
-          break; // this bullet is spent, stop checking other enemies
-        }
-      }
-    });
+  if (playerScreenX < leftBoundary) {
+    cameraX = player.x - leftBoundary;
+  } else if (playerScreenX > rightBoundary) {
+    cameraX = player.x - rightBoundary;
   }
 
-  function checkBulletPlayerCollisions(bullets, player) {
-    bullets.forEach((bullet) => {
-      if (!bullet.exists) return;
-      const bulletBox = bullet.getHitbox();
-      const pBox = player.getHitbox?.();
-      if (pBox && bullet.hitboxesOverlap(bulletBox, pBox)) {
-        // Check if player can be damaged (not invincible)
-        if (player.health > 0 && !player.isDead && !player.isInvincible()) {
-          player.health -= 25;
-          if (player.health < 0) player.health = 0;
-          // Set the flag to trigger the hit animation
-          player._pendingGetHitAnim = true;
-          console.log("Player hit by bullet! Health:", player.health);
+  cameraX = Math.max(0, Math.min(cameraX, window.worldWidth - canvas.width));
+}
 
-          if (player.health <= 0) {
-            console.log("Player should die");
-          }
-        }
+function checkBulletEnemyCollisions(bullets, enemies) {
+  bullets.forEach((bullet) => {
+    if (!bullet.exists) return;
+
+    const bulletBox = bullet.getHitbox();
+
+    for (const enemy of enemies) {
+      if (enemy.isDead) continue;
+
+      const enemyBox = enemy.getHitbox();
+
+      if (bullet.hitboxesOverlap(bulletBox, enemyBox)) {
+        enemy.takeDamage(1);
         bullet.exists = false;
+        break;
+      }
+    }
+  });
+}
+
+function checkBulletPlayerCollisions(bullets, player) {
+  bullets.forEach((bullet) => {
+    if (!bullet.exists) return;
+    const bulletBox = bullet.getHitbox();
+    const pBox = player.getHitbox?.();
+    if (pBox && bullet.hitboxesOverlap(bulletBox, pBox)) {
+      if (player.health > 0 && !player.isDead && !player.isInvincible()) {
+        player.health -= 25;
+        if (player.health < 0) player.health = 0;
+        player._pendingGetHitAnim = true;
+
+        if (player.health <= 0) {
+          console.log("Player should die");
+        }
+      }
+      bullet.exists = false;
+    }
+  });
+}
+
+function checkGrenadeEnemyCollisions(grenades, enemies) {
+  grenades.forEach((grenade) => {
+    if (!grenade.hasExploded || grenade._damageApplied) return;
+
+    enemies.forEach((enemy) => {
+      if (enemy.isDead) return;
+      const enemyBox = enemy.getHitbox();
+      if (grenade.isInBlastRadius(enemyBox)) {
+        enemy.takeDamage(grenade.damage ?? 50);
       }
     });
-  }
 
-  function checkGrenadeEnemyCollisions(grenades, enemies) {
-    grenades.forEach((grenade) => {
-      if (!grenade.hasExploded || grenade._damageApplied) return;
+    grenade._damageApplied = true;
+  });
+}
 
-      enemies.forEach((enemy) => {
-        if (enemy.isDead) return;
-        const enemyBox = enemy.getHitbox();
-        if (grenade.isInBlastRadius(enemyBox)) {
-          enemy.takeDamage(grenade.damage ?? 50);
-        }
-      });
+// Melee -> enemy collision. The player's Melee state (state.js) sets
+// `player._meleeHitActive = true` on its damaging frame; we build a
+// small hitbox extending `meleeRange` px in front of the player and
+// damage any enemy it overlaps, once per swing.
+function checkMeleeEnemyCollisions(player, enemies) {
+  if (!player._meleeHitActive || player._meleeHitApplied) return;
 
-      grenade._damageApplied = true; // only damage once, the frame it explodes
-    });
-  }
-  function animate(timeStamp) {
-    const deltaTime = timeStamp - lastTime;
-    lastTime = timeStamp;
-    checkBulletPlayerCollisions(bullets, player);
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const meleeRange = player.meleeRange ?? 20;
+  const pBox = player.getHitbox();
 
-    // UPDATE PLAYER FIRST
-    player.update(input);
+  const meleeBox = player.flip
+    ? {
+        left: pBox.left - meleeRange,
+        right: pBox.left,
+        top: pBox.top,
+        bottom: pBox.bottom,
+      }
+    : {
+        left: pBox.right,
+        right: pBox.right + meleeRange,
+        top: pBox.top,
+        bottom: pBox.bottom,
+      };
 
-    // UPDATE CAMERA BASED ON PLAYER POSITION
-    updateCamera();
-
-    // DRAW BACKGROUND (pass cameraX for parallax)
-    if (background) {
-      background.update(cameraX);
-      background.draw(ctx);
+  enemies.forEach((enemy) => {
+    if (enemy.isDead) return;
+    const enemyBox = enemy.getHitbox();
+    if (player.hitboxesOverlap?.(meleeBox, enemyBox)) {
+      enemy.takeDamage(player.meleeDamage ?? 20);
     }
+  });
 
-    // UPDATE AND DRAW GRENADES
-    grenades.forEach((grenade) => grenade.update(deltaTime));
-    checkGrenadeEnemyCollisions(grenades, enemies);
-    grenades = grenades.filter((grenade) => grenade.exists);
-    grenades.forEach((grenade) => {
-      ctx.save();
-      ctx.translate(-cameraX, -cameraY);
-      grenade.draw(ctx, deltaTime);
-      ctx.restore();
-    });
+  player._meleeHitApplied = true;
+}
 
-    // UPDATE AND DRAW BULLETS
+function animate(timeStamp, lastTimeRef) {
+  const deltaTime = timeStamp - lastTimeRef.value;
+  lastTimeRef.value = timeStamp;
+
+  checkBulletPlayerCollisions(bullets, player);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  player.update(input);
+  checkMeleeEnemyCollisions(player, enemies);
+
+  updateCamera();
+
+  if (background) {
+    background.update(cameraX);
+    background.draw(ctx);
+  }
+
+  grenades.forEach((grenade) => grenade.update(deltaTime));
+  checkGrenadeEnemyCollisions(grenades, enemies);
+  grenades = grenades.filter((grenade) => grenade.exists);
+  grenades.forEach((grenade) => {
+    ctx.save();
+    ctx.translate(-cameraX, -cameraY);
+    grenade.draw(ctx, deltaTime);
+    ctx.restore();
+  });
+
+  bullets.forEach((bullet) => bullet.update(deltaTime));
+  bullets = bullets.filter((bullet) => bullet.exists);
+
+  const playerBox = player.getHitbox?.();
+  if (playerBox) {
     bullets.forEach((bullet) => bullet.update(deltaTime));
+    checkBulletEnemyCollisions(bullets, enemies);
     bullets = bullets.filter((bullet) => bullet.exists);
-
-    // Bullet -> player hit detection (using bullet hitbox)
-    const playerBox = player.getHitbox?.();
-    if (playerBox) {
-      bullets.forEach((bullet) => bullet.update(deltaTime));
-      checkBulletEnemyCollisions(bullets, enemies); // <-- new line
-      bullets = bullets.filter((bullet) => bullet.exists);
-      bullets.forEach((bullet) => {
-        ctx.save();
-        ctx.translate(-cameraX, -cameraY);
-        bullet.draw(ctx, deltaTime);
-        ctx.restore();
-      });
-      bullets = bullets.filter((bullet) => bullet.exists);
-    }
-
     bullets.forEach((bullet) => {
       ctx.save();
       ctx.translate(-cameraX, -cameraY);
       bullet.draw(ctx, deltaTime);
       ctx.restore();
     });
-
-    // DRAW PLAYER
-    ctx.save();
-    ctx.translate(-cameraX, -cameraY);
-    player.draw(ctx, deltaTime);
-    ctx.restore();
-
-    // UPDATE AND DRAW ENEMIES
-    enemies.forEach((enemy) => {
-      enemy.update(deltaTime);
-
-      ctx.save();
-      ctx.translate(-cameraX, -cameraY);
-      enemy.draw(ctx, deltaTime);
-      ctx.restore();
-    });
-
-    // DRAW DEBUG TEXT
-    drawStatusText(ctx, input, player, deltaTime, grenades, bullets);
-
-    // Draw world boundaries for debugging
-    if (drawStatusText.debugOn) {
-      ctx.save();
-      ctx.translate(-cameraX, 0);
-      ctx.strokeStyle = "red";
-      ctx.lineWidth = 3;
-      ctx.setLineDash([10, 10]);
-
-      // Left boundary
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.lineTo(0, canvas.height);
-      ctx.stroke();
-
-      // Right boundary
-      ctx.beginPath();
-      ctx.moveTo(window.worldWidth, 0);
-      ctx.lineTo(window.worldWidth, canvas.height);
-      ctx.stroke();
-
-      ctx.restore();
-
-      // // Camera info
-      // ctx.fillStyle = "yellow";
-      // ctx.fillText(`World Width: ${window.worldWidth}`, 10, 110);
-      // ctx.fillText(`Camera X: ${Math.round(cameraX)}`, 10, 125);
-      // ctx.fillText(`Player X: ${Math.round(player.x)}`, 10, 140);
-    }
-
-    requestAnimationFrame(animate);
+    bullets = bullets.filter((bullet) => bullet.exists);
   }
 
-  animate(0);
-});
+  bullets.forEach((bullet) => {
+    ctx.save();
+    ctx.translate(-cameraX, -cameraY);
+    bullet.draw(ctx, deltaTime);
+    ctx.restore();
+  });
+
+  ctx.save();
+  ctx.translate(-cameraX, -cameraY);
+  player.draw(ctx, deltaTime);
+  ctx.restore();
+
+  enemies.forEach((enemy) => {
+    enemy.update(deltaTime);
+
+    ctx.save();
+    ctx.translate(-cameraX, -cameraY);
+    enemy.draw(ctx, deltaTime);
+    ctx.restore();
+  });
+
+  drawStatusText(ctx, input, player, deltaTime, grenades, bullets);
+
+  if (drawStatusText.debugOn) {
+    ctx.save();
+    ctx.translate(-cameraX, 0);
+    ctx.strokeStyle = "red";
+    ctx.lineWidth = 3;
+    ctx.setLineDash([10, 10]);
+
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(0, canvas.height);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(window.worldWidth, 0);
+    ctx.lineTo(window.worldWidth, canvas.height);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  animationFrameId = requestAnimationFrame((t) => animate(t, lastTimeRef));
+}
+
+// Called by the level-select menu (see menu.js) once the player picks a
+// level. Safe to call again later (e.g. "next level") - it tears down
+// the previous loop and starts fresh.
+export function startGame(levelKey) {
+  if (animationFrameId !== null) {
+    cancelAnimationFrame(animationFrameId);
+    animationFrameId = null;
+  }
+
+  setupGame(levelKey);
+
+  const lastTimeRef = { value: 0 };
+  animate(0, lastTimeRef);
+}
+
+// Expose globally too, since the menu's button onclick is simplest as
+// plain inline JS / non-module script.
+window.startGame = startGame;

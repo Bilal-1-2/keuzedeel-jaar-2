@@ -4,7 +4,8 @@
 
 export const levels = {
   winter1: {
-    worldWidth: 5000,
+    displayName: "Winter Outpost",
+    worldWidth: 8000,
     background: {
       width: 1667,
       height: 786,
@@ -22,13 +23,25 @@ export const levels = {
     },
     // Where each enemy should spawn for this level.
     // "type" must match a key in the enemySpawners map in script.js.
-    enemySpawns: [{ type: "icebull", x: 900 }],
+    enemySpawns: [
+      { type: "iceSkeleton", x: 1600 },
+      { type: "iceSkeleton", x: 2400 },
+      { type: "iceSkeleton", x: 2600 },
+      { type: "iceSkeleton", x: 2800 },
+      { type: "icebull", x: 3700 },
+      { type: "iceSkeleton", x: 3400 },
+      { type: "icebull", x: 7600 },
+      { type: "iceSkeleton", x: 6400 },
+      { type: "iceSkeleton", x: 6600 },
+      { type: "iceSkeleton", x: 6900 },
+    ],
   },
 
   // Example second level - swap in different <img> elements/ids in your
   // HTML (e.g. layer1_cave, layer2_cave, ...) and reference them here.
   winter2: {
-    worldWidth: 7000,
+    displayName: "Frozen Pass",
+    worldWidth:7000,
     background: {
       width: 1667,
       height: 786,
@@ -58,4 +71,12 @@ export function getLevel(levelKey) {
     return Object.values(levels)[0];
   }
   return level;
+}
+
+// For the level-select menu: list of { key, displayName } pairs.
+export function listLevels() {
+  return Object.entries(levels).map(([key, level]) => ({
+    key,
+    displayName: level.displayName ?? key,
+  }));
 }
