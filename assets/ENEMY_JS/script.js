@@ -30,6 +30,7 @@ let canvas, ctx, player, input, enemies, currentLevel;
 let animationFrameId = null;
 
 function setupGame(levelKey) {
+  currentLevelKey = levelKey;
   currentLevel = getLevel(levelKey);
   window.worldWidth = currentLevel.worldWidth;
 
@@ -270,6 +271,17 @@ function animate(timeStamp, lastTimeRef) {
   drawHealthHUD(ctx, player);
   drawStatusText(ctx, input, player, deltaTime, grenades, bullets);
 
+  // ── Victory check: all enemies dead/vanished → level complete ──
+  // An enemy counts as "cleared" once isDead OR isVanished is true.
+  if (!_victoryShown && enemies.length > 0) {
+    const allCleared = enemies.every((e) => e.isDead || e.isVanished);
+    if (allCleared) {
+      console.log(`[Victory] All ${enemies.length} enemies cleared! Showing overlay in 1.2s.`);
+      _victoryShown = true;
+      setTimeout(showVictoryOverlay, 1200);
+    }
+  }
+
   if (drawStatusText.debugOn) {
     ctx.save();
     ctx.translate(-cameraX, 0);
@@ -302,6 +314,7 @@ export function startGame(levelKey) {
     animationFrameId = null;
   }
 
+  hideVictoryOverlay();
   setupGame(levelKey);
 
   const lastTimeRef = { value: 0 };
@@ -317,6 +330,8 @@ export function returnToMenu() {
     animationFrameId = null;
   }
 
+  hideVictoryOverlay();
+
   if (typeof window.showMenu === "function") {
     window.showMenu("You died. Choose a level to try again.");
   } else {
@@ -325,6 +340,73 @@ export function returnToMenu() {
     );
   }
 }
+
+// ── Victory overlay ──────────────────────────────────────────────────────────
+
+let _victoryShown = false;
+
+function showVictoryOverlay() {
+  // _victoryShown is already true (set before the setTimeout that called us)
+  // so we don't gate on it here - we just show the overlay.
+
+  // Stop the game loop - nothing left to do
+  if (animationFrameId !== null) {
+    cancelAnimationFrame(animationFrameId);
+    animationFrameId = null;
+  }
+
+  const overlay = document.getElementById("victoryOverlay");
+  const nextBtn = document.getElementById("victoryNextBtn");
+  const restartBtn = document.getElementById("victoryRestartBtn");
+  const menuBtn = document.getElementById("victoryMenuBtn");
+  const subtitle = document.getElementById("victorySubtitle");
+
+  if (!overlay) return;
+
+  // Show/hide "Next Level" based on whether a next level exists
+  const nextLevelKey = currentLevel?.nextLevel ?? null;
+  if (nextBtn) {
+    if (nextLevelKey) {
+      nextBtn.classList.remove("hidden");
+      nextBtn.onclick = () => {
+        window.startGame(nextLevelKey);
+      };
+    } else {
+      nextBtn.classList.add("hidden");
+    }
+  }
+
+  if (restartBtn) {
+    restartBtn.onclick = () => {
+      window.startGame(currentLevelKey);
+    };
+  }
+
+  if (menuBtn) {
+    menuBtn.onclick = () => {
+      hideVictoryOverlay();
+      if (typeof window.showMenu === "function") {
+        window.showMenu("Choose where to drop in.");
+      }
+    };
+  }
+
+  if (subtitle) {
+    subtitle.textContent =
+      nextLevelKey ? "All enemies defeated. Ready for the next?" : "All enemies defeated. You finished the last level!";
+  }
+
+  overlay.classList.remove("hidden");
+}
+
+function hideVictoryOverlay() {
+  _victoryShown = false;
+  const overlay = document.getElementById("victoryOverlay");
+  if (overlay) overlay.classList.add("hidden");
+}
+
+// Track the current level key so Restart can reuse it
+let currentLevelKey = null;
 
 // Expose globally too, since the menu's button onclick is simplest as
 // plain inline JS / non-module script, and state.js calls this without

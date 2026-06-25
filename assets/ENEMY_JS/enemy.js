@@ -586,8 +586,8 @@ export class icebull extends Enemy {
 
     this.image = document.getElementById("icebull");
 
-    this.health = 100;
-    this.maxHealth = 100;
+    this.health = 50;
+    this.maxHealth = 50;
 
     this.states = [
       new EnemyIdle(this), // IDLE

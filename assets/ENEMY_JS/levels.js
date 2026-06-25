@@ -5,6 +5,7 @@
 export const levels = {
   winter1: {
     displayName: "Winter Outpost",
+    nextLevel: "winter2",
     worldWidth: 8000,
     background: {
       width: 1667,
@@ -41,6 +42,7 @@ export const levels = {
   // HTML (e.g. layer1_cave, layer2_cave, ...) and reference them here.
   winter2: {
     displayName: "Frozen Pass",
+    nextLevel: null,
     worldWidth:7000,
     background: {
       width: 1667,
@@ -53,11 +55,16 @@ export const levels = {
     },
     enemySpawns: [
       { type: "iceSkeleton", x: 1200 },
+      { type: "iceSkeleton", x: 1400 },
+      { type: "iceSkeleton", x: 2200 },
       { type: "iceSkeleton", x: 2400 },
+      { type: "iceSkeleton", x: 2800 },
       { type: "icebull", x: 3700 },
       { type: "iceSkeleton", x: 3400 },
       { type: "icebull", x: 5600 },
       { type: "iceSkeleton", x: 6400 },
+      { type: "iceSkeleton", x: 6600 },
+      { type: "iceSkeleton", x: 6800 },
     ],
   },
 };
