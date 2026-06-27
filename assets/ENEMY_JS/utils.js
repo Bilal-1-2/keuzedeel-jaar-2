@@ -57,6 +57,15 @@ export function drawHealthHUD(context, player) {
     y + barHeight / 2 + 1,
   );
 
+  // Ammo label (under the health bar, top-right)
+  const ammo = typeof player.magazine === "number" ? player.magazine : 0;
+  const ammoText = `AMMO: ${ammo} / 30`;
+  context.font = "bold 12px Arial";
+  context.fillStyle = "#d7e3ff";
+  context.textBaseline = "top";
+  context.textAlign = "center";
+  context.fillText(ammoText, x + barWidth / 2, y + barHeight + 4);
+
   context.restore();
 }
 

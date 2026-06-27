@@ -532,16 +532,15 @@ export class Gethit extends State {
     }
 
     if (this.player.frameX >= this.player.maxFrames) {
-      if (
-        input.keys.click === true &&
-        this.player.frameX >= this.player.maxFrames
-      ) {
-        this.player.previousState = states.STANDING;
-        this.player.setState(states.SHOOTING);
-      } else {
-        this.player.setState(this.player.previousState || states.STANDING);
-        return;
-      }
+
+      const returnTo = this.player.previousState;
+      const safeReturn =
+        typeof returnTo === "number" &&
+        returnTo !== states.DEAD &&
+        returnTo !== states.GETHIT
+          ? returnTo
+          : states.STANDING;
+      this.player.setState(safeReturn);
     }
   }
 }

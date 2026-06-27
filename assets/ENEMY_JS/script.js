@@ -125,7 +125,7 @@ function checkBulletEnemyCollisions(bullets, enemies) {
       const enemyBox = enemy.getHitbox();
 
       if (bullet.hitboxesOverlap(bulletBox, enemyBox)) {
-        enemy.takeDamage(1);
+        enemy.takeDamage(3);
         bullet.exists = false;
         break;
       }

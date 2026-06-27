@@ -22,77 +22,77 @@
 const SOUND_DEFS = {
   // ── Player ────────────────────────────────────────────────────────────────
   shoot: {
-    src: "assets/sounds/shoot.ogg",
+    // src: "assets/sounds/shoot.ogg",
     loop: false,
     volume: 0.55,
     cooldownMs: 120,       // minimum ms between plays (rapid fire cap)
     synth: (ctx) => synthShoot(ctx),
   },
   reload: {
-    src: "assets/sounds/reload.ogg",
+    // src: "assets/sounds/reload.ogg",
     loop: false,
     volume: 0.5,
     cooldownMs: 600,
     synth: (ctx) => synthReload(ctx),
   },
   footstepRun: {
-    src: "assets/sounds/footstep_run.ogg",
+    // src: "assets/sounds/footstep_run.ogg",
     loop: false,
     volume: 0.3,
     cooldownMs: 220,
     synth: (ctx) => synthFootstep(ctx, true),
   },
   footstepWalk: {
-    src: "assets/sounds/footstep_walk.ogg",
+    // src: "assets/sounds/footstep_walk.ogg",
     loop: false,
     volume: 0.25,
     cooldownMs: 360,
     synth: (ctx) => synthFootstep(ctx, false),
   },
   jump: {
-    src: "assets/sounds/jump.ogg",
+    // src: "assets/sounds/jump.ogg",
     loop: false,
     volume: 0.35,
     cooldownMs: 300,
     synth: (ctx) => synthJump(ctx),
   },
   land: {
-    src: "assets/sounds/land.ogg",
+    // src: "assets/sounds/land.ogg",
     loop: false,
     volume: 0.3,
     cooldownMs: 200,
     synth: (ctx) => synthLand(ctx),
   },
   grenade_throw: {
-    src: "assets/sounds/grenade_throw.ogg",
+    // src: "assets/sounds/grenade_throw.ogg",
     loop: false,
     volume: 0.4,
     cooldownMs: 400,
     synth: (ctx) => synthGrenadeThrow(ctx),
   },
   explosion: {
-    src: "assets/sounds/explosion.ogg",
+    // src: "assets/sounds/explosion.ogg",
     loop: false,
     volume: 0.7,
     cooldownMs: 300,
     synth: (ctx) => synthExplosion(ctx),
   },
   melee: {
-    src: "assets/sounds/melee.ogg",
+    // src: "assets/sounds/melee.ogg",
     loop: false,
     volume: 0.5,
     cooldownMs: 300,
     synth: (ctx) => synthMelee(ctx),
   },
   player_hit: {
-    src: "assets/sounds/player_hit.ogg",
+    // src: "assets/sounds/player_hit.ogg",
     loop: false,
     volume: 0.5,
     cooldownMs: 200,
     synth: (ctx) => synthPlayerHit(ctx),
   },
   player_death: {
-    src: "assets/sounds/player_death.ogg",
+    // src: "assets/sounds/player_death.ogg",
     loop: false,
     volume: 0.6,
     cooldownMs: 2000,
@@ -101,35 +101,35 @@ const SOUND_DEFS = {
 
   // ── Enemy ─────────────────────────────────────────────────────────────────
   enemy_anticipation: {
-    src: "assets/sounds/enemy_anticipation.ogg",
+    // src: "assets/sounds/enemy_anticipation.ogg",
     loop: false,
     volume: 0.45,
     cooldownMs: 800,
     synth: (ctx) => synthEnemyAnticipation(ctx),
   },
   enemy_charge: {
-    src: "assets/sounds/enemy_charge.ogg",
+    // src: "assets/sounds/enemy_charge.ogg",
     loop: false,
     volume: 0.5,
     cooldownMs: 1200,
     synth: (ctx) => synthEnemyCharge(ctx),
   },
   enemy_impact: {
-    src: "assets/sounds/enemy_impact.ogg",
+    // src: "assets/sounds/enemy_impact.ogg",
     loop: false,
     volume: 0.55,
     cooldownMs: 400,
     synth: (ctx) => synthEnemyImpact(ctx),
   },
   enemy_hit: {
-    src: "assets/sounds/enemy_hit.ogg",
+    // src: "assets/sounds/enemy_hit.ogg",
     loop: false,
     volume: 0.4,
     cooldownMs: 100,
     synth: (ctx) => synthEnemyHit(ctx),
   },
   enemy_death: {
-    src: "assets/sounds/enemy_death.ogg",
+    // src: "assets/sounds/enemy_death.ogg",
     loop: false,
     volume: 0.5,
     cooldownMs: 200,
@@ -138,7 +138,7 @@ const SOUND_DEFS = {
 
   // ── UI ────────────────────────────────────────────────────────────────────
   victory: {
-    src: "assets/sounds/victory.ogg",
+    // src: "assets/sounds/victory.ogg",
     loop: false,
     volume: 0.6,
     cooldownMs: 3000,

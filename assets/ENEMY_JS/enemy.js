@@ -362,7 +362,7 @@ export class Enemy {
   setState(stateEnum) {
     if (!this.states[stateEnum]) {
       console.warn(
-        `[Enemy] setState called with invalid stateEnum: ${stateEnum}`,
+        // `[Enemy] setState called with invalid stateEnum: ${stateEnum}`,
       );
       return;
     }
@@ -528,7 +528,7 @@ export class Enemy {
     if (!ctx || !this.image) return;
 
     const box = this.getHitbox();
-    ctx.strokeStyle = "#00ff00";
+    ctx.strokeStyle = "#00ff0000";
     ctx.strokeRect(
       box.left,
       box.top,

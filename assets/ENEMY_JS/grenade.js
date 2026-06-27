@@ -145,6 +145,15 @@ export default class Grenade {
   draw(ctx, deltaTime) {
     if (!this.exists || !this.image) return;
 
+    // Visual scale (use canvas transform)
+    const scale = 1.0; // normal size, no scaling
+
+    // If we render with scale, the grenade’s bottom will visually extend
+    // below the ground line. We compensate by lifting the render anchor.
+    const groundVisualLiftPx = (scale - 1) * this.height * 0.5;
+
+    const renderY = this.y - groundVisualLiftPx;
+
     // if (this.hasExploded) {
     //   // Simple blast visual - swap for a sprite/animation .
     //   const center = this.getBlastCenter();

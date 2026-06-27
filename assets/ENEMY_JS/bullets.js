@@ -31,8 +31,11 @@ export default class Bullet {
       this.frameTimer = 0;
     }
 
-    if (this.x > window.worldWidth + 500) this.exists = false;
-    if (this.x < -500) this.exists = false;
+    // Despawn near the visible/world edges so bullets don't travel far past the screen.
+    const rightBound = (window.worldWidth ?? this.gameWidth) + 10;
+    const leftBound = -10;
+    if (this.x > rightBound) this.exists = false;
+    if (this.x < leftBound) this.exists = false;
 
     // Also remove if too high or too low
     if (this.y > this.gameHeight + 200) this.exists = false;

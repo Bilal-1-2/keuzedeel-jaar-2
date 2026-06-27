@@ -241,9 +241,15 @@ export default class Player {
       this.setState(states.DEAD);
     } else if (this._pendingGetHitAnim && !this.isDead) {
       this._pendingGetHitAnim = false;
-      this.previousState = this.currentState.state !== "GETHIT"
-        ? this.states.indexOf(this.currentState)
-        : (this.previousState ?? states.STANDING);
+      // After the hit animation, always return to STANDING — never back to
+      // SHOOTING, MELEE or another GETHIT. The player must re-input to shoot
+      // again, just like after a reload.
+      const cur = this.currentState.state;
+      const returnTo =
+        cur === "SHOOTING" || cur === "MELEE" || cur === "GETHIT"
+          ? states.STANDING
+          : (this.previousState ?? states.STANDING);
+      this.previousState = returnTo;
       this.setState(states.GETHIT);
     }
   }
