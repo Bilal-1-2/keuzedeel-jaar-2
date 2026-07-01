@@ -19,7 +19,14 @@ img,
 #layer6,
 #layer7,
 #layer8,
-#layer9 {
+#layer9,
+#winter_layer1,
+#winter_layer2,
+#winter_layer3,
+#icebull,
+#iceskeleton,
+#soldier,
+#grenade {
   display: none;
 }
 #laoding {

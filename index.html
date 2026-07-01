@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>state management</title>
-    <link rel="stylesheet" href="/assets/css/style.css" />
+    <link rel="stylesheet" href="./assets/css/style.css" />
     <style>
       #menuOverlay {
         position: fixed;
@@ -53,7 +53,9 @@
         font-size: 15px;
         text-align: left;
         cursor: pointer;
-        transition: background 0.15s, border-color 0.15s;
+        transition:
+          background 0.15s,
+          border-color 0.15s;
       }
       .levelButton:hover {
         background: #2f3f4e;
@@ -138,8 +140,14 @@
         display: none;
       }
       @keyframes victoryFadeIn {
-        from { opacity: 0; transform: scale(0.95); }
-        to   { opacity: 1; transform: scale(1); }
+        from {
+          opacity: 0;
+          transform: scale(0.95);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
       }
       .victoryPanel {
         background: #1b232d;
@@ -149,7 +157,9 @@
         width: 360px;
         max-width: 90vw;
         text-align: center;
-        box-shadow: 0 0 60px rgba(91, 134, 255, 0.15), 0 10px 40px rgba(0,0,0,0.5);
+        box-shadow:
+          0 0 60px rgba(91, 134, 255, 0.15),
+          0 10px 40px rgba(0, 0, 0, 0.5);
       }
       .victoryIcon {
         font-size: 48px;
@@ -179,7 +189,9 @@
         border-radius: 6px;
         font-size: 15px;
         cursor: pointer;
-        transition: background 0.15s, border-color 0.15s;
+        transition:
+          background 0.15s,
+          border-color 0.15s;
       }
       .victoryBtn:hover {
         background: #2f3f4e;
@@ -219,14 +231,38 @@
         </button>
         <div class="controlsPanel" id="menuControlsPanel">
           <table>
-            <tr><td class="key">A / D</td><td>Move left / right</td></tr>
-            <tr><td class="key">W / Space</td><td>Jump</td></tr>
-            <tr><td class="key">Ctrl</td><td>Toggle walk / run</td></tr>
-            <tr><td class="key">R</td><td>Reload</td></tr>
-            <tr><td class="key">G</td><td>Throw grenade</td></tr>
-            <tr><td class="key">Click</td><td>Fire</td></tr>
-            <tr><td class="key">E</td><td>Melee</td></tr>
-            <tr><td class="key">H</td><td>Toggle this panel in-game</td></tr>
+            <tr>
+              <td class="key">A / D</td>
+              <td>Move left / right</td>
+            </tr>
+            <tr>
+              <td class="key">W / Space</td>
+              <td>Jump</td>
+            </tr>
+            <tr>
+              <td class="key">Ctrl</td>
+              <td>Toggle walk / run</td>
+            </tr>
+            <tr>
+              <td class="key">R</td>
+              <td>Reload</td>
+            </tr>
+            <tr>
+              <td class="key">G</td>
+              <td>Throw grenade</td>
+            </tr>
+            <tr>
+              <td class="key">Click</td>
+              <td>Fire</td>
+            </tr>
+            <tr>
+              <td class="key">E</td>
+              <td>Melee</td>
+            </tr>
+            <tr>
+              <td class="key">H</td>
+              <td>Toggle this panel in-game</td>
+            </tr>
           </table>
         </div>
       </div>
@@ -237,11 +273,23 @@
       <div class="victoryPanel">
         <div class="victoryIcon">★</div>
         <h1 id="victoryTitle">Level Complete!</h1>
-        <p id="victorySubtitle" class="victorySubtitle">All enemies defeated.</p>
+        <p id="victorySubtitle" class="victorySubtitle">
+          All enemies defeated.
+        </p>
         <div class="victoryButtons">
-          <button id="victoryNextBtn" class="victoryBtn victoryBtn--primary" type="button">Next Level →</button>
-          <button id="victoryRestartBtn" class="victoryBtn" type="button">↺ Restart</button>
-          <button id="victoryMenuBtn" class="victoryBtn" type="button">☰ Menu</button>
+          <button
+            id="victoryNextBtn"
+            class="victoryBtn victoryBtn--primary"
+            type="button"
+          >
+            Next Level →
+          </button>
+          <button id="victoryRestartBtn" class="victoryBtn" type="button">
+            ↺ Restart
+          </button>
+          <button id="victoryMenuBtn" class="victoryBtn" type="button">
+            ☰ Menu
+          </button>
         </div>
       </div>
     </div>
@@ -249,13 +297,34 @@
     <!-- Always-available in-game controls reference (toggle with H) -->
     <div id="inGameControls">
       <table>
-        <tr><td class="key">A / D</td><td>Move left / right</td></tr>
-        <tr><td class="key">W / Space</td><td>Jump</td></tr>
-        <tr><td class="key">Ctrl</td><td>Toggle walk / run</td></tr>
-        <tr><td class="key">R</td><td>Reload</td></tr>
-        <tr><td class="key">G</td><td>Throw grenade</td></tr>
-        <tr><td class="key">Click</td><td>Fire</td></tr>
-        <tr><td class="key">E</td><td>Melee</td></tr>
+        <tr>
+          <td class="key">A / D</td>
+          <td>Move left / right</td>
+        </tr>
+        <tr>
+          <td class="key">W / Space</td>
+          <td>Jump</td>
+        </tr>
+        <tr>
+          <td class="key">Ctrl</td>
+          <td>Toggle walk / run</td>
+        </tr>
+        <tr>
+          <td class="key">R</td>
+          <td>Reload</td>
+        </tr>
+        <tr>
+          <td class="key">G</td>
+          <td>Throw grenade</td>
+        </tr>
+        <tr>
+          <td class="key">Click</td>
+          <td>Fire</td>
+        </tr>
+        <tr>
+          <td class="key">E</td>
+          <td>Melee</td>
+        </tr>
       </table>
     </div>
 
@@ -269,9 +338,21 @@
     <img src="assets\backgrounds\winter2\3\7.png" alt="" id="layer7" />
     <img src="assets\backgrounds\winter2\3\8.png" alt="" id="layer8" />
     <img src="assets\backgrounds\winter2\3\9.png" alt="" id="layer9" />
-    <img src="assets\backgrounds\winter\winter 3\1.png" alt="" id="winter_layer1" />
-    <img src="assets\backgrounds\winter\winter 3\2.png" alt="" id="winter_layer2" />
-    <img src="assets\backgrounds\winter\winter 3\3.png" alt="" id="winter_layer3" />
+    <img
+      src="assets\backgrounds\winter\winter 3\1.png"
+      alt=""
+      id="winter_layer1"
+    />
+    <img
+      src="assets\backgrounds\winter\winter 3\2.png"
+      alt=""
+      id="winter_layer2"
+    />
+    <img
+      src="assets\backgrounds\winter\winter 3\3.png"
+      alt=""
+      id="winter_layer3"
+    />
 
     <img src="assets\enemies\ice Bull-copy.png" alt="" id="icebull" />
     <img src="assets\enemies\ice-skeleton.png" alt="" id="iceskeleton" />
